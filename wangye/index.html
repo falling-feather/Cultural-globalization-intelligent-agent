@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>文化传播智能体</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <strong id="brandName">小飞</strong>
+        <span id="brandSub">文化传播智能体</span>
+      </div>
+      <div class="top-actions">
+        <button id="publishBtn" class="btn btn-primary">发布任务</button>
+        <button id="channelBtn" class="btn btn-light">渠道 4</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="sidebar">
+        <h2 id="sidebarTitle">导航 / 核心功能</h2>
+        <nav class="nav-list">
+          <button class="nav-item" data-view="dialog">智能对话</button>
+          <button class="nav-item" data-view="material">素材与模板</button>
+          <button class="nav-item" data-view="channel">渠道投放</button>
+          <button class="nav-item" data-view="preview">资源预览</button>
+        </nav>
+
+        <section class="card resources">
+          <h3 id="resourceTitle">资源概览</h3>
+          <p id="resource1">脚本模板 12 份</p>
+          <p id="resource2">多语语料 3 组</p>
+        </section>
+      </aside>
+
+      <section class="center-panel">
+        <div class="task-head card">
+          <h3 id="taskTitle">任务面板 / 江南文化国际传播方案</h3>
+          <span id="taskStatus">状态: 生成中 34%</span>
+        </div>
+
+        <div class="tabs card">
+          <button class="tab" data-tab="dialog">核心功能: 对话生成</button>
+          <button class="tab" data-tab="material">素材检索</button>
+          <button class="tab" data-tab="channel">渠道投放</button>
+        </div>
+
+        <section class="conversation card">
+          <article class="notice" id="noticeText"></article>
+          <article class="bubble user" id="userText"></article>
+          <article class="bubble ai" id="aiText"></article>
+        </section>
+
+        <div class="composer card">
+          <button class="btn btn-light" id="assetBtn">+ 素材</button>
+          <input id="composerInput" type="text" placeholder="输入你的文化传播目标、受众与语气要求..." />
+          <button id="submitBtn" class="btn btn-primary">发送</button>
+        </div>
+
+        <div class="feedback" id="feedback"></div>
+      </section>
+
+      <aside class="right-panel">
+        <h3 id="rightTitle">任务与统计</h3>
+        <p id="rightSub">当前任务进度与快捷操作</p>
+
+        <section class="card metric">
+          <p class="label" id="metricLabel">任务完成度</p>
+          <p class="value" id="metricValue">34%</p>
+          <p class="hint" id="metricHint">下一步：确认受众与语气模板</p>
+        </section>
+
+        <section class="card quick">
+          <p class="label" id="quickTitle">快捷操作</p>
+          <button class="quick-item" id="quick1"></button>
+          <button class="quick-item" id="quick2"></button>
+        </section>
+
+        <section class="card todo">
+          <p class="label" id="todoTitle">待办清单</p>
+          <button class="todo-item" id="todo1"></button>
+          <button class="todo-item" id="todo2"></button>
+          <button class="todo-item" id="todo3"></button>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

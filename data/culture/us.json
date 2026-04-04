@@ -1,0 +1,5 @@
+{
+  "language": "en-US",
+  "tone_preferences": ["direct", "friendly", "actionable"],
+  "taboo_terms": ["guaranteed results", "medical miracle"]
+}
