@@ -1,260 +1,470 @@
-const viewData = {
-  dialog: {
-    sidebarTitle: "导航 / 核心功能",
-    taskTitle: "任务面板 / 江南文化国际传播方案",
-    taskStatus: "状态: 生成中 34%",
-    noticeText: "建议先明确目标人群（海外华人 / Z世代旅行者 / 艺术受众），可提高内容命中率。",
-    userText: "请给我生成 3 种不同语气的短视频开场白，每种附传播场景。",
-    aiText:
-      "已为你准备：\n1) 诗意叙事风（适合文旅号）\n2) 事实冲击风（适合资讯号）\n3) 社交对话风（适合短评号）\n要不要我继续直接输出中英双语版本？",
-    inputPlaceholder: "输入你的文化传播目标、受众与语气要求...",
-    submitLabel: "发送",
-    rightTitle: "任务与统计",
-    rightSub: "当前任务进度与快捷操作",
-    metricLabel: "任务完成度",
-    metricValue: "34%",
-    metricHint: "下一步：确认受众与语气模板",
-    quickTitle: "快捷操作",
-    quick1: "1. 生成中英双语开场白",
-    quick2: "2. 输出三平台发布时间建议",
-    todoTitle: "待办清单",
-    todo1: "[ ] 确认目标受众",
-    todo2: "[ ] 选择文案语气",
-    todo3: "[ ] 导出投放排期",
-    resources: {
-      title: "资源概览",
-      line1: "脚本模板 12 份",
-      line2: "多语语料 3 组"
-    },
-    activeTab: "dialog"
-  },
-  material: {
-    sidebarTitle: "导航 / 模板中心",
-    taskTitle: "任务面板 / 素材与模板筛选",
-    taskStatus: "状态: 已加载 128 个模板",
-    noticeText: "可按地区、受众年龄、叙事风格筛选模板，支持一键套用到当前任务。",
-    userText: "筛选条件：东亚文化圈 + 18~25岁 + 轻叙事 + 30秒短视频",
-    aiText:
-      "已匹配模板：\n1) 城市记忆开场（情绪导入）\n2) 非遗人物故事（人物驱动）\n3) 地标巡礼（镜头切换）\n可直接点击右侧应用模板。",
-    inputPlaceholder: "输入关键词检索模板，如：国风、非遗、城市漫游...",
-    submitLabel: "应用模板",
-    rightTitle: "模板命中统计",
-    rightSub: "当前筛选结果与可复用素材",
-    metricLabel: "模板匹配度",
-    metricValue: "91%",
-    metricHint: "高匹配：人物故事 + 城市地标组合",
-    quickTitle: "可用模板",
-    quick1: "1. 口播开场模板（12）",
-    quick2: "2. 叙事分镜模板（8）",
-    todoTitle: "素材清单",
-    todo1: "[ ] 历史图像 24 张",
-    todo2: "[ ] 双语字幕模板 6 套",
-    todo3: "[ ] 可商用配乐 9 首",
-    resources: {
-      title: "资源概览",
-      line1: "脚本模板 12 份",
-      line2: "多语语料 3 组"
-    },
-    activeTab: "material"
-  },
-  channel: {
-    sidebarTitle: "导航 / 投放控制",
-    taskTitle: "任务面板 / 渠道投放编排",
-    taskStatus: "状态: 待发布 3 个平台",
-    noticeText: "投放策略建议：先 TikTok 冷启动，再将高互动内容复用到 Shorts。",
-    userText: "计划：今日 19:30 TikTok，20:10 Shorts，次日 12:30 Reels。",
-    aiText:
-      "排期校验结果：\n1) 时段冲突：无\n2) 受众重叠：中等\n3) 预算消耗：预计 78%\n建议保留 22% 预算用于次日追投。",
-    inputPlaceholder: "输入投放要求，如：预算上限、地区、发布时间...",
-    submitLabel: "生成排期",
-    rightTitle: "投放监控",
-    rightSub: "平台排期与预算消耗概览",
-    metricLabel: "预算使用率",
-    metricValue: "78%",
-    metricHint: "TikTok 预估 CTR 高于基线 13%",
-    quickTitle: "投放清单",
-    quick1: "1. TikTok: 19:30（首发）",
-    quick2: "2. Shorts: 20:10（复投）",
-    todoTitle: "风控提醒",
-    todo1: "[ ] 检查版权音乐授权",
-    todo2: "[ ] 避免节日敏感词",
-    todo3: "[ ] 校验地区标签",
-    resources: {
-      title: "资源概览",
-      line1: "已创建投放计划 3 条",
-      line2: "预算池余额 22%"
-    },
-    activeTab: "channel"
-  },
-  preview: {
-    sidebarTitle: "导航 / 资源预览",
-    taskTitle: "任务面板 / 资源预览与比对",
-    taskStatus: "状态: 已加载 36 条候选素材",
-    noticeText: "预览说明：支持图文、脚本、字幕三类资源并排比对。",
-    userText: "当前选中：非遗人物脚本 V3（中英双语，时长 42 秒）",
-    aiText:
-      "资源预览摘要：\n1) 标题：青花瓷的千年回响\n2) 结构：起势-故事-升华\n3) 风格：知识叙事\n可点击发送推入主对话继续加工。",
-    inputPlaceholder: "输入资源编号或关键词快速预览...",
-    submitLabel: "推入会话",
-    rightTitle: "资源质量评估",
-    rightSub: "可读性、版权、复用率三维指标",
-    metricLabel: "复用潜力",
-    metricValue: "84%",
-    metricHint: "建议优先复用脚本段落 2/3",
-    quickTitle: "预览操作",
-    quick1: "1. 对比原稿与改写稿",
-    quick2: "2. 查看字幕时间轴",
-    todoTitle: "预览队列",
-    todo1: "[ ] 脚本 V1",
-    todo2: "[ ] 脚本 V2",
-    todo3: "[ ] 脚本 V3（当前）",
-    resources: {
-      title: "资源概览",
-      line1: "素材池条目 36 条",
-      line2: "当前预览版本 V3"
-    },
-    activeTab: "material"
-  }
+/* ===== API Layer ===== */
+
+const API_BASE = window.location.origin;
+
+async function apiPost(path, body) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+  return data;
+}
+
+async function apiGet(path) {
+  const res = await fetch(`${API_BASE}${path}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+  return data;
+}
+
+const api = {
+  health: () => apiGet("/health"),
+  chat: (message, market, history) =>
+    apiPost("/api/v1/chat", { message, market, history }),
+  createJob: (payload) => apiPost("/api/v1/jobs", payload),
+  getJob: (id) => apiGet(`/api/v1/jobs/${id}`),
+  listJobs: (limit = 20, offset = 0) =>
+    apiGet(`/api/v1/jobs?limit=${limit}&offset=${offset}`),
+  getJobScript: (id) => apiGet(`/api/v1/jobs/${id}/script`),
+  listMarkets: () => apiGet("/api/v1/culture"),
+  getMarketRules: (market) => apiGet(`/api/v1/culture/${market}`),
 };
+
+/* ===== State ===== */
 
 let currentView = "dialog";
+let chatHistory = [];
+let currentMarket = "AFRICA";
+let allMarkets = [];
+let isWaitingReply = false;
 
-const nodes = {
-  sidebarTitle: document.getElementById("sidebarTitle"),
-  taskTitle: document.getElementById("taskTitle"),
-  taskStatus: document.getElementById("taskStatus"),
-  noticeText: document.getElementById("noticeText"),
-  userText: document.getElementById("userText"),
-  aiText: document.getElementById("aiText"),
-  composerInput: document.getElementById("composerInput"),
-  submitBtn: document.getElementById("submitBtn"),
-  rightTitle: document.getElementById("rightTitle"),
-  rightSub: document.getElementById("rightSub"),
-  metricLabel: document.getElementById("metricLabel"),
-  metricValue: document.getElementById("metricValue"),
-  metricHint: document.getElementById("metricHint"),
-  quickTitle: document.getElementById("quickTitle"),
-  quick1: document.getElementById("quick1"),
-  quick2: document.getElementById("quick2"),
-  todoTitle: document.getElementById("todoTitle"),
-  todo1: document.getElementById("todo1"),
-  todo2: document.getElementById("todo2"),
-  todo3: document.getElementById("todo3"),
-  resourceTitle: document.getElementById("resourceTitle"),
-  resource1: document.getElementById("resource1"),
-  resource2: document.getElementById("resource2"),
-  feedback: document.getElementById("feedback"),
-  publishBtn: document.getElementById("publishBtn"),
-  channelBtn: document.getElementById("channelBtn"),
-  assetBtn: document.getElementById("assetBtn")
+/* ===== DOM Refs ===== */
+
+const $ = (id) => document.getElementById(id);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+const els = {
+  healthBadge: $("healthBadge"),
+  marketSelect: $("marketSelect"),
+  newTaskBtn: $("newTaskBtn"),
+
+  viewDialog: $("viewDialog"),
+  viewTasks: $("viewTasks"),
+  viewMaterial: $("viewMaterial"),
+  viewCreate: $("viewCreate"),
+
+  chatMessages: $("chatMessages"),
+  chatInput: $("chatInput"),
+  chatSendBtn: $("chatSendBtn"),
+  chatFeedback: $("chatFeedback"),
+  chatMarketLabel: $("chatMarketLabel"),
+
+  jobsList: $("jobsList"),
+  refreshJobsBtn: $("refreshJobsBtn"),
+
+  materialGrid: $("materialGrid"),
+
+  createTopic: $("createTopic"),
+  createMarket: $("createMarket"),
+  createTone: $("createTone"),
+  createTags: $("createTags"),
+  createSubmitBtn: $("createSubmitBtn"),
+  createFeedback: $("createFeedback"),
+
+  metricTotal: $("metricTotal"),
+  metricHint: $("metricHint"),
+  recentJobs: $("recentJobs"),
+  resLine1: $("resLine1"),
+  resLine2: $("resLine2"),
+
+  taskModal: $("taskModal"),
+  modalClose: $("modalClose"),
+  modalBody: $("modalBody"),
 };
 
-const navButtons = Array.from(document.querySelectorAll(".nav-item"));
-const tabButtons = Array.from(document.querySelectorAll(".tab"));
+/* ===== Navigation ===== */
 
-function setFeedback(text) {
-  nodes.feedback.textContent = text;
-}
+const viewMap = {
+  dialog: els.viewDialog,
+  tasks: els.viewTasks,
+  material: els.viewMaterial,
+  create: els.viewCreate,
+};
 
-function setActiveNav(viewKey) {
-  navButtons.forEach((btn) => {
-    const active = btn.dataset.view === viewKey;
-    btn.classList.toggle("active", active);
-  });
-}
-
-function setActiveTab(tabKey) {
-  tabButtons.forEach((btn) => {
-    const active = btn.dataset.tab === tabKey;
-    btn.classList.toggle("active", active);
-  });
-}
-
-function renderView(viewKey) {
-  const state = viewData[viewKey];
-  if (!state) {
-    return;
-  }
-
+function switchView(viewKey) {
+  if (!viewMap[viewKey]) return;
   currentView = viewKey;
 
-  nodes.sidebarTitle.textContent = state.sidebarTitle;
-  nodes.taskTitle.textContent = state.taskTitle;
-  nodes.taskStatus.textContent = state.taskStatus;
-  nodes.noticeText.textContent = state.noticeText;
-  nodes.userText.textContent = state.userText;
-  nodes.aiText.textContent = state.aiText;
-  nodes.composerInput.placeholder = state.inputPlaceholder;
-  nodes.submitBtn.textContent = state.submitLabel;
-  nodes.rightTitle.textContent = state.rightTitle;
-  nodes.rightSub.textContent = state.rightSub;
-  nodes.metricLabel.textContent = state.metricLabel;
-  nodes.metricValue.textContent = state.metricValue;
-  nodes.metricHint.textContent = state.metricHint;
-  nodes.quickTitle.textContent = state.quickTitle;
-  nodes.quick1.textContent = state.quick1;
-  nodes.quick2.textContent = state.quick2;
-  nodes.todoTitle.textContent = state.todoTitle;
-  nodes.todo1.textContent = state.todo1;
-  nodes.todo2.textContent = state.todo2;
-  nodes.todo3.textContent = state.todo3;
-  nodes.resourceTitle.textContent = state.resources.title;
-  nodes.resource1.textContent = state.resources.line1;
-  nodes.resource2.textContent = state.resources.line2;
+  Object.values(viewMap).forEach((el) => el.classList.add("hidden"));
+  viewMap[viewKey].classList.remove("hidden");
 
-  setActiveNav(viewKey);
-  setActiveTab(state.activeTab);
-  setFeedback("已切换到: " + state.sidebarTitle.replace("导航 / ", ""));
+  $$(".nav-item").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.view === viewKey);
+  });
+
+  if (viewKey === "tasks") loadJobs();
+  if (viewKey === "material") loadMaterial();
 }
 
-navButtons.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    renderView(btn.dataset.view);
-  });
+$$(".nav-item").forEach((btn) => {
+  btn.addEventListener("click", () => switchView(btn.dataset.view));
 });
 
-tabButtons.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const key = btn.dataset.tab;
-    if (key === "dialog") {
-      renderView("dialog");
-    } else if (key === "material") {
-      renderView(currentView === "preview" ? "preview" : "material");
-    } else if (key === "channel") {
-      renderView("channel");
+$("quickChat").addEventListener("click", () => switchView("dialog"));
+$("quickCreate").addEventListener("click", () => switchView("create"));
+$("quickMaterial").addEventListener("click", () => switchView("material"));
+els.newTaskBtn.addEventListener("click", () => switchView("create"));
+
+/* ===== Health Check ===== */
+
+async function checkHealth() {
+  try {
+    const data = await api.health();
+    els.healthBadge.textContent = `服务正常`;
+    els.healthBadge.className = "health-badge ok";
+    els.resLine1.textContent = `服务: 在线 (${data.env})`;
+    els.resLine2.textContent = `市场: ${currentMarket}`;
+  } catch {
+    els.healthBadge.textContent = "服务不可用";
+    els.healthBadge.className = "health-badge err";
+    els.resLine1.textContent = "服务: 离线";
+    els.resLine2.textContent = "请检查后端是否启动";
+  }
+}
+
+/* ===== Markets ===== */
+
+async function loadMarkets() {
+  try {
+    allMarkets = await api.listMarkets();
+    const options = allMarkets
+      .map(
+        (m) =>
+          `<option value="${m.id.toUpperCase()}"${m.id.toUpperCase() === currentMarket ? " selected" : ""}>${m.label}</option>`
+      )
+      .join("");
+
+    if (options) {
+      els.marketSelect.innerHTML = options;
+      els.createMarket.innerHTML = options;
     }
-  });
+  } catch {
+    // keep default options
+  }
+}
+
+els.marketSelect.addEventListener("change", () => {
+  currentMarket = els.marketSelect.value;
+  els.chatMarketLabel.textContent = `市场: ${currentMarket}`;
+  els.resLine2.textContent = `市场: ${currentMarket}`;
 });
 
-nodes.publishBtn.addEventListener("click", () => {
-  renderView("channel");
-  setFeedback("已跳转到投放控制，可直接生成排期。");
+/* ===== Chat ===== */
+
+function appendBubble(role, text) {
+  const bubble = document.createElement("article");
+  bubble.className = `bubble ${role}`;
+  bubble.textContent = text;
+  els.chatMessages.appendChild(bubble);
+  els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
+  return bubble;
+}
+
+function setLoading(loading) {
+  isWaitingReply = loading;
+  els.chatSendBtn.disabled = loading;
+  els.chatSendBtn.textContent = loading ? "思考中..." : "发送";
+}
+
+function setChatFeedback(text, type = "") {
+  els.chatFeedback.textContent = text;
+  els.chatFeedback.className = `feedback ${type}`;
+}
+
+async function sendMessage() {
+  const text = els.chatInput.value.trim();
+  if (!text || isWaitingReply) return;
+
+  appendBubble("user", text);
+  els.chatInput.value = "";
+  setChatFeedback("");
+
+  const loadingBubble = appendBubble("ai", "正在思考...");
+  loadingBubble.classList.add("loading");
+  setLoading(true);
+
+  try {
+    const data = await api.chat(text, currentMarket, chatHistory);
+    chatHistory.push({ role: "user", content: text });
+    chatHistory.push({ role: "assistant", content: data.reply });
+
+    loadingBubble.textContent = data.reply;
+    loadingBubble.classList.remove("loading");
+  } catch (err) {
+    loadingBubble.textContent = `请求失败: ${err.message}`;
+    loadingBubble.classList.remove("loading");
+    setChatFeedback(err.message, "error");
+  } finally {
+    setLoading(false);
+  }
+}
+
+els.chatSendBtn.addEventListener("click", sendMessage);
+els.chatInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
 });
 
-nodes.channelBtn.addEventListener("click", () => {
-  renderView("channel");
-  setFeedback("当前渠道数量: 4，已进入渠道投放面板。");
-});
+/* ===== Jobs List ===== */
 
-nodes.assetBtn.addEventListener("click", () => {
-  renderView("material");
-  setFeedback("已跳转到素材与模板，可筛选模板后应用。");
-});
+function renderStatusBadge(status) {
+  return `<span class="status-badge ${status}">${status}</span>`;
+}
 
-nodes.submitBtn.addEventListener("click", () => {
-  const text = nodes.composerInput.value.trim();
-  if (!text) {
-    setFeedback("请输入内容后再提交。");
+function formatTime(isoStr) {
+  try {
+    const d = new Date(isoStr);
+    return d.toLocaleString("zh-CN", {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return isoStr;
+  }
+}
+
+async function loadJobs() {
+  els.jobsList.innerHTML = '<p class="empty-hint">加载中...</p>';
+  try {
+    const data = await api.listJobs();
+    if (!data.jobs || data.jobs.length === 0) {
+      els.jobsList.innerHTML = '<p class="empty-hint">暂无任务，请先创建一个视频生成任务。</p>';
+      updateMetrics(0, []);
+      return;
+    }
+
+    els.jobsList.innerHTML = data.jobs
+      .map(
+        (job) => `
+      <div class="job-card" data-job-id="${job.id}">
+        <div class="job-card-header">
+          <span class="job-card-topic">${escapeHtml(job.request.topic)}</span>
+          ${renderStatusBadge(job.status)}
+        </div>
+        <div class="job-card-meta">
+          <span>市场: ${escapeHtml(job.request.market)}</span>
+          <span>语气: ${escapeHtml(job.request.tone)}</span>
+          <span>${formatTime(job.created_at)}</span>
+        </div>
+      </div>`
+      )
+      .join("");
+
+    els.jobsList.querySelectorAll(".job-card").forEach((card) => {
+      card.addEventListener("click", () => showJobDetail(card.dataset.jobId));
+    });
+
+    updateMetrics(data.total, data.jobs);
+  } catch (err) {
+    els.jobsList.innerHTML = `<p class="empty-hint">加载失败: ${escapeHtml(err.message)}</p>`;
+  }
+}
+
+function updateMetrics(total, jobs) {
+  els.metricTotal.textContent = total;
+  const successCount = jobs.filter((j) => j.status === "success").length;
+  const runningCount = jobs.filter((j) => j.status === "running").length;
+  els.metricHint.textContent = `成功 ${successCount} | 运行中 ${runningCount}`;
+
+  if (jobs.length === 0) {
+    els.recentJobs.innerHTML = '<p class="empty-hint">暂无</p>';
     return;
   }
-  setFeedback("已提交: " + text + " （演示交互，未接入后端）");
-  nodes.composerInput.value = "";
-});
 
-[nodes.quick1, nodes.quick2, nodes.todo1, nodes.todo2, nodes.todo3].forEach((btn) => {
-  btn.addEventListener("click", () => {
-    setFeedback("已点击: " + btn.textContent);
+  els.recentJobs.innerHTML = jobs
+    .slice(0, 5)
+    .map(
+      (job) => `
+    <div class="recent-job-item" data-job-id="${job.id}">
+      <span class="recent-job-topic">${escapeHtml(job.request.topic)}</span>
+      <span class="recent-job-status status-badge ${job.status}">${job.status}</span>
+    </div>`
+    )
+    .join("");
+
+  els.recentJobs.querySelectorAll(".recent-job-item").forEach((item) => {
+    item.addEventListener("click", () => showJobDetail(item.dataset.jobId));
   });
-});
+}
 
-renderView("dialog");
+async function showJobDetail(jobId) {
+  els.taskModal.classList.remove("hidden");
+  els.modalBody.innerHTML = "<p>加载中...</p>";
+
+  try {
+    const job = await api.getJob(jobId);
+    let scriptHtml = "";
+    if (job.status === "success" || job.status === "running") {
+      try {
+        const scriptData = await api.getJobScript(jobId);
+        if (scriptData.script) {
+          scriptHtml = `
+            <div class="detail-row" style="flex-direction:column;">
+              <span class="detail-label">生成脚本</span>
+              <pre>${escapeHtml(scriptData.script)}</pre>
+            </div>`;
+        }
+      } catch {
+        // script not available
+      }
+    }
+
+    const videoUrl = job.result?.video_url;
+    const videoHtml = videoUrl
+      ? `<div class="detail-row"><span class="detail-label">视频地址</span><span class="detail-value"><a href="${escapeHtml(videoUrl)}" target="_blank" style="color:var(--primary);word-break:break-all;">${escapeHtml(videoUrl)}</a></span></div>`
+      : "";
+
+    const errorHtml = job.error
+      ? `<div class="detail-row"><span class="detail-label">错误</span><span class="detail-value" style="color:var(--error);">${escapeHtml(job.error)}</span></div>`
+      : "";
+
+    els.modalBody.innerHTML = `
+      <div class="detail-row"><span class="detail-label">任务 ID</span><span class="detail-value" style="font-family:monospace;font-size:12px;">${escapeHtml(job.id)}</span></div>
+      <div class="detail-row"><span class="detail-label">状态</span><span class="detail-value">${renderStatusBadge(job.status)}</span></div>
+      <div class="detail-row"><span class="detail-label">主题</span><span class="detail-value">${escapeHtml(job.request.topic)}</span></div>
+      <div class="detail-row"><span class="detail-label">市场</span><span class="detail-value">${escapeHtml(job.request.market)}</span></div>
+      <div class="detail-row"><span class="detail-label">语气</span><span class="detail-value">${escapeHtml(job.request.tone)}</span></div>
+      <div class="detail-row"><span class="detail-label">受众</span><span class="detail-value">${(job.request.audience_tags || []).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join(" ")}</span></div>
+      <div class="detail-row"><span class="detail-label">创建时间</span><span class="detail-value">${formatTime(job.created_at)}</span></div>
+      <div class="detail-row"><span class="detail-label">更新时间</span><span class="detail-value">${formatTime(job.updated_at)}</span></div>
+      ${videoHtml}
+      ${errorHtml}
+      ${scriptHtml}
+    `;
+  } catch (err) {
+    els.modalBody.innerHTML = `<p style="color:var(--error);">加载失败: ${escapeHtml(err.message)}</p>`;
+  }
+}
+
+els.modalClose.addEventListener("click", () =>
+  els.taskModal.classList.add("hidden")
+);
+els.taskModal.addEventListener("click", (e) => {
+  if (e.target === els.taskModal) els.taskModal.classList.add("hidden");
+});
+els.refreshJobsBtn.addEventListener("click", loadJobs);
+
+/* ===== Material ===== */
+
+async function loadMaterial() {
+  els.materialGrid.innerHTML = '<p class="empty-hint">加载中...</p>';
+
+  try {
+    const markets = allMarkets.length > 0 ? allMarkets : await api.listMarkets();
+    if (markets.length === 0) {
+      els.materialGrid.innerHTML = '<p class="empty-hint">暂无文化数据</p>';
+      return;
+    }
+
+    const rulesPromises = markets.map((m) =>
+      api.getMarketRules(m.id).then((rules) => ({ market: m, rules }))
+    );
+    const results = await Promise.all(rulesPromises);
+
+    els.materialGrid.innerHTML = results
+      .map(
+        ({ market, rules }) => `
+      <div class="material-card">
+        <h4>${escapeHtml(market.label)} (${escapeHtml(rules.language || "en")})</h4>
+        <div class="rule-section">
+          <div class="rule-label">推荐语气</div>
+          <div class="rule-value">${(rules.tone_preferences || []).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join(" ")}</div>
+        </div>
+        <div class="rule-section">
+          <div class="rule-label">禁忌用语</div>
+          <div class="rule-value">${(rules.taboo_terms || []).length > 0 ? rules.taboo_terms.map((t) => `<span class="tag" style="background:#fee2e2;color:var(--error);">${escapeHtml(t)}</span>`).join(" ") : '<span style="color:var(--muted);">无</span>'}</div>
+        </div>
+        ${rules.cultural_notes ? `<div class="rule-section"><div class="rule-label">文化备注</div><div class="rule-value">${escapeHtml(typeof rules.cultural_notes === "string" ? rules.cultural_notes : JSON.stringify(rules.cultural_notes))}</div></div>` : ""}
+      </div>`
+      )
+      .join("");
+  } catch (err) {
+    els.materialGrid.innerHTML = `<p class="empty-hint">加载失败: ${escapeHtml(err.message)}</p>`;
+  }
+}
+
+/* ===== Create Job ===== */
+
+function setCreateFeedback(text, type = "") {
+  els.createFeedback.textContent = text;
+  els.createFeedback.className = `feedback ${type}`;
+}
+
+async function submitJob() {
+  const topic = els.createTopic.value.trim();
+  if (!topic) {
+    setCreateFeedback("请输入主题", "error");
+    return;
+  }
+
+  const payload = {
+    topic,
+    market: els.createMarket.value,
+    tone: els.createTone.value.trim() || "neutral",
+    audience_tags: els.createTags.value
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
+  };
+
+  els.createSubmitBtn.disabled = true;
+  els.createSubmitBtn.textContent = "提交中...";
+  setCreateFeedback("");
+
+  try {
+    const data = await api.createJob(payload);
+    setCreateFeedback(`任务已创建！ID: ${data.job_id}`, "success");
+    loadJobsSilent();
+  } catch (err) {
+    setCreateFeedback(`创建失败: ${err.message}`, "error");
+  } finally {
+    els.createSubmitBtn.disabled = false;
+    els.createSubmitBtn.textContent = "提交任务";
+  }
+}
+
+els.createSubmitBtn.addEventListener("click", submitJob);
+
+async function loadJobsSilent() {
+  try {
+    const data = await api.listJobs(5);
+    updateMetrics(data.total, data.jobs || []);
+  } catch {
+    // silent
+  }
+}
+
+/* ===== Utility ===== */
+
+function escapeHtml(str) {
+  if (str == null) return "";
+  const s = String(str);
+  const div = document.createElement("div");
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+/* ===== Init ===== */
+
+async function init() {
+  await Promise.all([checkHealth(), loadMarkets(), loadJobsSilent()]);
+}
+
+init();

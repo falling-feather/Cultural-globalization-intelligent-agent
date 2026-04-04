@@ -21,5 +21,15 @@ class CultureService:
             "taboo_terms": [],
         }
 
+    def list_markets(self) -> list[dict]:
+        markets: list[dict] = []
+        if not self.base_dir.exists():
+            return markets
+        for f in sorted(self.base_dir.glob("*.json")):
+            name = f.stem
+            data = json.loads(f.read_text(encoding="utf-8"))
+            markets.append({"id": name, "language": data.get("language", "en"), "label": name.upper()})
+        return markets
+
 
 culture_service = CultureService()

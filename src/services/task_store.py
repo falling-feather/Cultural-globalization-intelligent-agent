@@ -113,6 +113,37 @@ class TaskStore:
                 )
                 conn.commit()
 
+    def list_all(self, limit: int = 50, offset: int = 0) -> list[JobRecord]:
+        with self._lock:
+            with self._connect() as conn:
+                rows = conn.execute(
+                    "SELECT * FROM jobs ORDER BY created_at DESC LIMIT ? OFFSET ?",
+                    (limit, offset),
+                ).fetchall()
+
+        results: list[JobRecord] = []
+        for row in rows:
+            request_data = json.loads(row["request_json"])
+            result_data = json.loads(row["result_json"]) if row["result_json"] else None
+            results.append(
+                JobRecord(
+                    id=row["id"],
+                    status=JobStatus(row["status"]),
+                    created_at=datetime.fromisoformat(row["created_at"]),
+                    updated_at=datetime.fromisoformat(row["updated_at"]),
+                    request=CreateJobRequest(**request_data),
+                    result=result_data,
+                    error=row["error"],
+                )
+            )
+        return results
+
+    def count(self) -> int:
+        with self._lock:
+            with self._connect() as conn:
+                row = conn.execute("SELECT COUNT(*) as cnt FROM jobs").fetchone()
+        return row["cnt"] if row else 0
+
     def set_error(self, job_id: str, error: str) -> None:
         now = datetime.utcnow().isoformat()
         with self._lock:

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>文化传播智能体</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="/app/styles.css" />
 </head>
 <body>
   <div class="app">
@@ -15,81 +15,146 @@
         <span id="brandSub">文化传播智能体</span>
       </div>
       <div class="top-actions">
-        <button id="publishBtn" class="btn btn-primary">发布任务</button>
-        <button id="channelBtn" class="btn btn-light">渠道 4</button>
+        <span class="health-badge" id="healthBadge">检测服务中...</span>
+        <select id="marketSelect" class="market-select">
+          <option value="AFRICA" selected>AFRICA</option>
+        </select>
+        <button id="newTaskBtn" class="btn btn-primary">+ 新建任务</button>
       </div>
     </header>
 
     <main class="layout">
       <aside class="sidebar">
-        <h2 id="sidebarTitle">导航 / 核心功能</h2>
+        <h2 id="sidebarTitle">导航</h2>
         <nav class="nav-list">
-          <button class="nav-item" data-view="dialog">智能对话</button>
-          <button class="nav-item" data-view="material">素材与模板</button>
-          <button class="nav-item" data-view="channel">渠道投放</button>
-          <button class="nav-item" data-view="preview">资源预览</button>
+          <button class="nav-item active" data-view="dialog">智能对话</button>
+          <button class="nav-item" data-view="tasks">任务管理</button>
+          <button class="nav-item" data-view="material">文化素材</button>
+          <button class="nav-item" data-view="create">创建任务</button>
         </nav>
 
-        <section class="card resources">
-          <h3 id="resourceTitle">资源概览</h3>
-          <p id="resource1">脚本模板 12 份</p>
-          <p id="resource2">多语语料 3 组</p>
+        <section class="card resources" id="resourcePanel">
+          <h3>服务状态</h3>
+          <p id="resLine1">检测中...</p>
+          <p id="resLine2">--</p>
         </section>
       </aside>
 
-      <section class="center-panel">
+      <!-- ===== Dialog View ===== -->
+      <section class="center-panel view-panel" id="viewDialog">
         <div class="task-head card">
-          <h3 id="taskTitle">任务面板 / 江南文化国际传播方案</h3>
-          <span id="taskStatus">状态: 生成中 34%</span>
+          <h3>智能对话</h3>
+          <span id="chatMarketLabel">市场: AFRICA</span>
         </div>
 
-        <div class="tabs card">
-          <button class="tab" data-tab="dialog">核心功能: 对话生成</button>
-          <button class="tab" data-tab="material">素材检索</button>
-          <button class="tab" data-tab="channel">渠道投放</button>
-        </div>
-
-        <section class="conversation card">
-          <article class="notice" id="noticeText"></article>
-          <article class="bubble user" id="userText"></article>
-          <article class="bubble ai" id="aiText"></article>
+        <section class="conversation card" id="chatMessages">
+          <article class="bubble ai">你好！我是文化传播智能体助手。请告诉我你希望创作什么内容，我会根据目标市场的文化特点为你提供建议。</article>
         </section>
 
         <div class="composer card">
-          <button class="btn btn-light" id="assetBtn">+ 素材</button>
-          <input id="composerInput" type="text" placeholder="输入你的文化传播目标、受众与语气要求..." />
-          <button id="submitBtn" class="btn btn-primary">发送</button>
+          <input id="chatInput" type="text" placeholder="输入你的文化传播目标、受众与语气要求..." />
+          <button id="chatSendBtn" class="btn btn-primary">发送</button>
         </div>
-
-        <div class="feedback" id="feedback"></div>
+        <div class="feedback" id="chatFeedback"></div>
       </section>
 
+      <!-- ===== Tasks View ===== -->
+      <section class="center-panel view-panel hidden" id="viewTasks">
+        <div class="task-head card">
+          <h3>任务管理</h3>
+          <button id="refreshJobsBtn" class="btn btn-light btn-sm">刷新</button>
+        </div>
+
+        <div class="task-list card" id="jobsList">
+          <p class="empty-hint">暂无任务，请先创建一个视频生成任务。</p>
+        </div>
+      </section>
+
+      <!-- ===== Material View ===== -->
+      <section class="center-panel view-panel hidden" id="viewMaterial">
+        <div class="task-head card">
+          <h3>文化素材库</h3>
+          <span>按市场查看文化规则与内容策略</span>
+        </div>
+
+        <div class="material-grid" id="materialGrid">
+          <p class="empty-hint">加载中...</p>
+        </div>
+      </section>
+
+      <!-- ===== Create Task View ===== -->
+      <section class="center-panel view-panel hidden" id="viewCreate">
+        <div class="task-head card">
+          <h3>创建视频生成任务</h3>
+          <span>填写参数后提交，系统将自动生成文化适配的视频脚本</span>
+        </div>
+
+        <div class="create-form card">
+          <label for="createTopic">主题 Topic</label>
+          <input id="createTopic" type="text" value="fintech inclusion" placeholder="视频主题..." />
+
+          <div class="form-row">
+            <div>
+              <label for="createMarket">目标市场</label>
+              <select id="createMarket">
+                <option value="AFRICA" selected>AFRICA</option>
+              </select>
+            </div>
+            <div>
+              <label for="createTone">语气风格</label>
+              <input id="createTone" type="text" value="friendly" placeholder="如: friendly, formal..." />
+            </div>
+          </div>
+
+          <label for="createTags">受众标签（逗号分隔）</label>
+          <input id="createTags" type="text" value="18-35, mobile-first" placeholder="如: 18-35, mobile-first" />
+
+          <button id="createSubmitBtn" class="btn btn-primary">提交任务</button>
+          <div class="feedback" id="createFeedback"></div>
+        </div>
+      </section>
+
+      <!-- ===== Right Panel ===== -->
       <aside class="right-panel">
-        <h3 id="rightTitle">任务与统计</h3>
-        <p id="rightSub">当前任务进度与快捷操作</p>
+        <h3>概览</h3>
+        <p id="rightSub">任务统计与快捷操作</p>
 
         <section class="card metric">
-          <p class="label" id="metricLabel">任务完成度</p>
-          <p class="value" id="metricValue">34%</p>
-          <p class="hint" id="metricHint">下一步：确认受众与语气模板</p>
+          <p class="label">任务总数</p>
+          <p class="value" id="metricTotal">--</p>
+          <p class="hint" id="metricHint">加载中...</p>
         </section>
 
         <section class="card quick">
-          <p class="label" id="quickTitle">快捷操作</p>
-          <button class="quick-item" id="quick1"></button>
-          <button class="quick-item" id="quick2"></button>
+          <p class="label">最近任务</p>
+          <div id="recentJobs">
+            <p class="empty-hint">暂无</p>
+          </div>
         </section>
 
-        <section class="card todo">
-          <p class="label" id="todoTitle">待办清单</p>
-          <button class="todo-item" id="todo1"></button>
-          <button class="todo-item" id="todo2"></button>
-          <button class="todo-item" id="todo3"></button>
+        <section class="card quick">
+          <p class="label">快捷操作</p>
+          <button class="quick-item" id="quickChat">开始对话咨询</button>
+          <button class="quick-item" id="quickCreate">创建新任务</button>
+          <button class="quick-item" id="quickMaterial">查看文化素材</button>
         </section>
       </aside>
     </main>
   </div>
 
-  <script src="script.js"></script>
+  <!-- Task Detail Modal -->
+  <div class="modal-overlay hidden" id="taskModal">
+    <div class="modal-content card">
+      <div class="modal-header">
+        <h3>任务详情</h3>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <p>加载中...</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app/script.js"></script>
 </body>
 </html>
