@@ -81,7 +81,11 @@ uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
 ### 阿里云 ECS（Git 拉取 + 长期运行）
 
-服务器上克隆仓库后，可使用 `scripts/aliyun_start.sh`（默认端口 **902**），详见 [docs/ALIYUN_DEPLOY.md](docs/ALIYUN_DEPLOY.md)。
+- **仓库**：<https://github.com/falling-feather/Cultural-globalization-intelligent-agent>  
+- **Linux**：`scripts/aliyun_start.sh`（默认端口 **902**）  
+- **Windows 图形界面服务器**：`scripts/aliyun_windows_start.ps1`（默认端口 **901**，适配已装 Git / Node 的环境）  
+
+完整步骤与安全组、防火墙说明见 [docs/ALIYUN_DEPLOY.md](docs/ALIYUN_DEPLOY.md)。
 
 ## 配置说明
 

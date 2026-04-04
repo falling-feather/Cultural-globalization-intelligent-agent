@@ -1,198 +1,220 @@
 # 阿里云 ECS 部署说明（Git 拉取 + 一键启动）
 
-本文配合仓库内脚本 [`scripts/aliyun_start.sh`](../scripts/aliyun_start.sh) 使用：在服务器上 `git pull` 更新代码后执行脚本，即可完成依赖安装并**长期运行**（默认监听 **902** 端口，与「0902」即端口 **902** 一致）。
+官方仓库：**https://github.com/falling-feather/Cultural-globalization-intelligent-agent**
 
 ---
 
-## 一、你需要在阿里云上完成的设置
+## 零、仓库克隆（通用）
 
-### 1. 安全组（必做）
-
-1. 登录 [阿里云控制台](https://ecs.console.aliyun.com/) → **云服务器 ECS** → 实例 → 点击实例 ID → **安全组** → 配置规则。
-2. **入方向** 新增一条：
-   - **协议类型**：TCP  
-   - **端口范围**：`902/902`（若你改用其他端口，改成对应范围，如 `8000/8000`）  
-   - **授权对象**：`0.0.0.0/0`（仅测试用；生产建议改为你的办公网 IP 或 VPN 网段）  
-   - **描述**：Agent Culture HTTP  
-
-> 若后续前面再加 **Nginx** 监听 80/443，则安全组需放行 **80、443**，应用可只监听本机 `127.0.0.1:902`，由 Nginx 反代（更安全）。当前脚本默认 **0.0.0.0:902** 直连应用，与安全组 902 一致。
-
-### 2. 系统防火墙（若开启）
-
-**Ubuntu（ufw）示例：**
+在服务器上选择空目录后执行（HTTPS）：
 
 ```bash
-sudo ufw allow 902/tcp
-sudo ufw reload
-sudo ufw status
+git clone https://github.com/falling-feather/Cultural-globalization-intelligent-agent.git
+cd Cultural-globalization-intelligent-agent
 ```
 
-**firewalld（部分 CentOS）：**
+若仓库为私有，请使用 **GitHub Personal Access Token** 或 **SSH 密钥** 完成鉴权。
 
-```bash
-sudo firewall-cmd --permanent --add-port=902/tcp
-sudo firewall-cmd --reload
-```
+**切勿**将 `.env`（含 API Key）提交到 Git；首次部署复制环境模板：
 
-### 3. 公网 IP 与带宽
-
-- 确保实例已绑定 **公网 IP**（或 EIP），且带宽足够访问页面与调用外网 API（DeepSeek、硅基流动）。
-
-### 4. 域名与备案（可选）
-
-- 仅用 **IP:902** 访问无需备案。  
-- 若要用 **80/443 + 域名** 在中国大陆机房，需按阿里云要求完成 **ICP 备案** 与 HTTPS 证书（可与 Nginx 一并配置）。
-
-### 5. 密钥与仓库
-
-- 在服务器上配置 **SSH 密钥** 或 **HTTPS + Token**，以便 `git pull` 私有仓库。  
-- **切勿**将 `.env`（含 API Key）提交到 Git；首次部署在服务器上复制 `.env.example` 为 `.env` 并编辑（脚本会在缺少 `.env` 时自动复制模板）。
+- **Windows（PowerShell）**：`Copy-Item .env.example .env`，再用记事本编辑  
+- **Linux**：`cp .env.example .env && nano .env`
 
 ---
 
-## 二、服务器软件准备（首次）
+## 一、阿里云控制台（通用）
 
-以 **Ubuntu 22.04** 为例：
+### 1. 安全组入方向
+
+1. 登录 [云服务器 ECS 控制台](https://ecs.console.aliyun.com/) → 实例 → 安全组 → **配置规则**。  
+2. **入方向** 放行你实际使用的端口，例如：
+
+| 场景 | 端口 | 说明 |
+|------|------|------|
+| Windows 脚本默认 | **TCP 901** | [`scripts/aliyun_windows_start.ps1`](../scripts/aliyun_windows_start.ps1) 默认 `901`，与你现有 901 习惯一致 |
+| Linux 脚本默认 | **TCP 902** | [`scripts/aliyun_start.sh`](../scripts/aliyun_start.sh) 默认 `902` |
+
+- **授权对象**：测试可用 `0.0.0.0/0`；生产建议改为固定 IP 或 VPN 网段。  
+- 若同一安全组上已有 **901** 规则且复用该端口，只需保证未被其它程序独占即可。
+
+### 2. 公网与带宽
+
+- 实例需绑定 **公网 IP** 或 **EIP**，并保证能访问外网（调用 DeepSeek、硅基流动等）。
+
+### 3. 域名与备案（可选）
+
+- 使用 **`http://公网IP:端口`** 一般无需备案。  
+- 使用 **80/443 + 域名** 且为中国大陆机房时，需按阿里云要求完成 **ICP 备案**。
+
+---
+
+## 二、Windows Server（带图形界面）部署
+
+适用于：阿里云 **Windows 镜像** ECS，已安装 **Git**、**Node.js** 的场景。
+
+### 2.1 关于 Node.js
+
+本项目 **后端为 Python + FastAPI**，**不依赖 Node.js**。服务器上已安装的 Node 可继续给其它项目使用；部署本智能体只需 **Python 3.11+**。
+
+若尚未安装 Python：
+
+1. 打开浏览器下载 [Python 3.11+ Windows 安装包](https://www.python.org/downloads/windows/)。  
+2. 安装时勾选 **Add python.exe to PATH**。  
+3. 重新打开 **PowerShell**，执行 `python --version` 或 `py -3.11 --version` 确认。
+
+### 2.2 Windows 防火墙
+
+1. **控制面板** → **Windows Defender 防火墙** → **高级设置**。  
+2. **入站规则** → **新建规则** → **端口** → **TCP**，特定本地端口填 **`901`**（若你改用其它端口，与此一致）。  
+3. 允许连接 → 勾选 **域 / 专用 / 公用**（按你的网络场景）→ 命名如 `AgentCulture-901`。
+
+### 2.3 一键启动（默认端口 901）
+
+在仓库根目录打开 **PowerShell**（建议「以管理员身份运行」仅在你需要写系统目录时；一般用户目录不必）：
+
+```powershell
+cd C:\path\to\Cultural-globalization-intelligent-agent
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force
+.\scripts\aliyun_windows_start.ps1
+```
+
+可选参数：
+
+```powershell
+# 指定端口（与安全组、防火墙一致）
+.\scripts\aliyun_windows_start.ps1 -Port 901
+
+# 跳过本次 git pull
+.\scripts\aliyun_windows_start.ps1 -NoGitPull
+
+# 开发调试（热重载，生产勿用）
+.\scripts\aliyun_windows_start.ps1 -Reload
+```
+
+脚本会：`git pull` → 创建/更新 `.venv` → `pip install` → 在 **`0.0.0.0:901`** 后台启动 Uvicorn（**2 workers**，无 `--reload`）。
+
+日志目录：`logs\agent-culture.log`、`logs\agent-culture.err.log`。
+
+停止服务：
+
+```powershell
+.\scripts\aliyun_windows_stop.ps1
+```
+
+### 2.4 长期运行（无人登录也保持运行）
+
+当前脚本用后台进程启动；**用户注销后，该进程可能被系统结束**。若需要 **开机自启 / 崩溃重启**，可选用：
+
+**方案 A：任务计划程序**
+
+1. **任务计划程序** → **创建任务**（不要用「创建基本任务」以便配置完整）。  
+2. **常规**：勾选「不管用户是否登录都要运行」、**使用最高权限运行**（若需要）。  
+3. **触发器**：「启动时」或「登录时」。  
+4. **操作**：启动程序  
+   - 程序：`powershell.exe`  
+   - 参数：`-NoProfile -ExecutionPolicy Bypass -File "C:\path\to\Cultural-globalization-intelligent-agent\scripts\aliyun_windows_start.ps1" -NoGitPull`  
+   - 起始于：`C:\path\to\Cultural-globalization-intelligent-agent`  
+5. 日常更新代码后，可再建一个「仅手动运行」的任务，参数去掉 `-NoGitPull`，或登录后手动执行一次带 `git pull` 的脚本。
+
+**方案 B：NSSM（将 Uvicorn 注册为 Windows 服务）**
+
+1. 下载 [NSSM](https://nssm.cc/download)，解压后以管理员 CMD 执行：  
+   `nssm install AgentCulture`  
+2. **Application**：`C:\path\to\Cultural-globalization-intelligent-agent\.venv\Scripts\python.exe`  
+3. **Arguments**：`-m uvicorn src.main:app --host 0.0.0.0 --port 901 --workers 2`  
+4. **Startup directory**：仓库根目录路径。  
+5. 安装服务后：`nssm start AgentCulture`。
+
+### 2.5 访问地址
+
+```text
+http://<ECS公网IP>:901/
+```
+
+API 文档：`http://<公网IP>:901/docs`
+
+---
+
+## 三、Linux 部署（脚本默认端口 902）
+
+### 3.1 软件准备（Ubuntu 示例）
 
 ```bash
 sudo apt update
 sudo apt install -y git python3.11 python3.11-venv python3-pip
 ```
 
-若无 `python3.11`，可安装 `python3`（需 3.10+）；脚本会优先选用 `python3.11`。
-
----
-
-## 三、部署目录与 Git 拉取
-
-示例将代码放在 `/opt/agent-culture`（可改成你的路径）：
+### 3.2 克隆与 `.env`
 
 ```bash
 sudo mkdir -p /opt/agent-culture
 sudo chown "$USER:$USER" /opt/agent-culture
 cd /opt/agent-culture
-
-# 首次克隆（将下面地址换成你的 GitHub 仓库）
-git clone https://github.com/你的用户名/agent-culture.git .
-
-# 或先 clone 到子目录再移动，按你习惯即可
-```
-
-配置 `.env`：
-
-```bash
+git clone https://github.com/falling-feather/Cultural-globalization-intelligent-agent.git .
 cp .env.example .env
-nano .env   # 填入 DEEPSEEK_API_KEY、SILICONFLOW_API_KEY 等
+nano .env
 ```
 
----
-
-## 四、一键启动脚本（长期运行）
-
-### 4.1 赋予执行权限
+### 3.3 一键启动
 
 ```bash
-cd /opt/agent-culture
 chmod +x scripts/aliyun_start.sh scripts/aliyun_stop.sh
-```
-
-### 4.2 方式 A：后台 nohup（简单）
-
-默认 **端口 902**，每次执行会 `git pull`、装依赖、启动（并尝试停掉旧 nohup 进程）：
-
-```bash
 ./scripts/aliyun_start.sh
 ```
 
-自定义端口：
+默认 **`AGENT_CULTURE_PORT=902`**。自定义端口：
 
 ```bash
 AGENT_CULTURE_PORT=902 ./scripts/aliyun_start.sh
 ```
 
-跳过本次 `git pull`：
+**systemd（推荐生产）**：
 
 ```bash
-SKIP_GIT_PULL=1 ./scripts/aliyun_start.sh
-```
-
-日志文件：`logs/agent-culture.log`。
-
-停止 nohup 实例：
-
-```bash
-./scripts/aliyun_stop.sh
-```
-
-### 4.3 方式 B：systemd（推荐生产）
-
-开机自启、崩溃自动拉起：
-
-```bash
-cd /opt/agent-culture
 sudo USE_SYSTEMD=1 ./scripts/aliyun_start.sh
 ```
 
-- 服务名：`agent-culture`  
-- 查看状态：`sudo systemctl status agent-culture`  
-- 看日志：`sudo journalctl -u agent-culture -f`  
-- 重启：`sudo systemctl restart agent-culture`  
-- 停止：`sudo systemctl stop agent-culture`  
+详见脚本内注释；安全组与系统防火墙需放行对应端口（如 **902**）。
 
-若仓库属于普通用户而你用 `sudo` 执行脚本，默认会以 **`SUDO_USER`**（你登录的用户）作为运行用户；也可指定：
+### 3.4 访问地址
 
-```bash
-sudo SERVICE_USER=ubuntu USE_SYSTEMD=1 ./scripts/aliyun_start.sh
+```text
+http://<公网IP>:902/
 ```
 
 ---
 
-## 五、更新发布流程（Git 拉取）
+## 四、更新发布（Git 拉取）
+
+**Windows：**
+
+```powershell
+cd C:\path\to\Cultural-globalization-intelligent-agent
+git pull --ff-only
+.\scripts\aliyun_windows_start.ps1
+```
+
+**Linux（systemd）：**
 
 ```bash
 cd /opt/agent-culture
-git pull --ff-only
-./scripts/aliyun_start.sh
-```
-
-- **nohup 模式**：脚本会停旧进程再起新进程。  
-- **systemd 模式**：建议改为：
-
-```bash
 git pull --ff-only
 sudo systemctl restart agent-culture
 ```
 
-或在 pull 后再次执行 `sudo USE_SYSTEMD=1 ./scripts/aliyun_start.sh`（会重写 unit 并 restart）。
-
 ---
 
-## 六、访问地址
+## 五、常见问题
 
-浏览器打开：
+1. **浏览器无法访问**  
+   - 核对 **安全组** 与 **系统防火墙** 端口是否与脚本一致（Windows 默认 **901**，Linux 默认 **902**）。  
+   - 本机自测：浏览器访问 `http://127.0.0.1:901/`（或你的端口）。
 
-```text
-http://<你的ECS公网IP>:902/
-```
+2. **对话 / 任务报错**  
+   - 检查 `.env` 中 API Key、`USE_REAL_APIS`。  
+   - 确认 ECS 可访问外网。
 
-- 根路径会重定向到 `/app/` 主界面。  
-- API 文档：`http://<公网IP>:902/docs`  
-
----
-
-## 七、常见问题
-
-**1. 浏览器打不开、一直转圈**  
-- 安全组与系统防火墙是否放行 **902**。  
-- 本机监听：`ss -tlnp | grep 902` 或 `curl -sI http://127.0.0.1:902/`
-
-**2. 对话 / 任务接口报错**  
-- 检查 `.env` 中 Key 与 `USE_REAL_APIS`。  
-- 服务器需能访问外网（DeepSeek、硅基流动）。
-
-**3. 想用 80 端口**  
-- 不推荐直接 root 跑 1024 以下端口；建议 **Nginx 监听 80** 反代到 `127.0.0.1:902`，安全组只开 80/443。可参考主文档 [`GUIDE.md`](GUIDE.md) 中的 Nginx 示例，把 `proxy_pass` 改为 `http://127.0.0.1:902`。
-
----
+3. **Windows 上提示无法执行脚本**  
+   - `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`。
 
 更多通用说明见 [`GUIDE.md`](GUIDE.md)。

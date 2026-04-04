@@ -19,6 +19,10 @@ ENV/
 storage/task_store.db
 storage/outputs/*.json
 
+# Server runtime (Windows/Linux 启动脚本写入)
+.agent-culture.pid
+logs/
+
 # IDE
 .vscode/
 .idea/
