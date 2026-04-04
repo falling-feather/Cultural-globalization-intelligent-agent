@@ -1,11 +1,11 @@
 # Agent Culture — 阿里云 Windows Server（图形界面）一键更新并后台启动
-# 默认端口 901（与常见「901 端口部署」习惯一致；可用 -Port 修改）
+# 默认端口 902（与 Linux 脚本 aliyun_start.sh 一致；可用 -Port 修改）
 #
 # 用法：
 #   powershell -ExecutionPolicy Bypass -File .\scripts\aliyun_windows_start.ps1
 #
 # 参数：
-#   -Port 901          监听端口（默认 901）
+#   -Port 902          监听端口（默认 902）
 #   -NoGitPull         跳过 git pull
 #   -Reload            开发用：uvicorn --reload（单进程，生产勿用）
 #
@@ -13,7 +13,7 @@
 # 说明：本项目后端为 Python/FastAPI，不依赖 Node.js。
 
 Param(
-    [int]$Port = 901,
+    [int]$Port = 902,
     [switch]$NoGitPull,
     [switch]$Reload
 )

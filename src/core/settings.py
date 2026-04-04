@@ -24,6 +24,18 @@ class Settings(BaseSettings):
     video_poll_interval_sec: int = 5
     video_poll_timeout_sec: int = 300
 
+    # Auth（管理员密码仅写在 .env，勿提交仓库；首次无用户时用于创建 admin）
+    jwt_secret: str = "dev-change-me-use-long-random-string-in-production-32chars"
+    jwt_expire_hours: int = 24
+    auth_db_path: str = "storage/auth.db"
+    admin_username: str = ""
+    admin_password: str = ""
+    trust_proxy_headers: bool = False
+
+    # 网页抓取（内容总结）
+    fetch_max_bytes: int = 2_000_000
+    summarize_max_chars: int = 24000
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 

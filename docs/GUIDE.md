@@ -63,16 +63,27 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-编辑 `.env` 文件，填入必要的 API Key：
+编辑 `.env` 文件，填入必要的 API Key 与认证相关项：
 
 ```ini
 # 必填
 DEEPSEEK_API_KEY=你的_DeepSeek_密钥
 SILICONFLOW_API_KEY=你的_硅基流动_密钥
 
+# 登录与 JWT（生产环境务必设置强随机 JWT_SECRET）
+JWT_SECRET=至少32位随机字符串
+# 数据库中尚无用户时，会用下面账号自动创建管理员（仅首次）
+ADMIN_USERNAME=你的管理员登录名
+ADMIN_PASSWORD=你的强密码
+
 # 可选：关闭真实 API 调用（使用模拟数据）
 # USE_REAL_APIS=false
+
+# 在 Nginx 等反代后部署时，可开启以正确记录客户端 IP
+# TRUST_PROXY_HEADERS=true
 ```
+
+审计与用户信息保存在 `storage/auth.db`（勿提交到 Git）。
 
 ### 2.3 启动开发服务器
 
@@ -88,12 +99,14 @@ uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
 启动后可访问：
 
-| 地址 | 说明 |
-|------|------|
-| http://localhost:8000/ | 主界面（智能对话、任务管理等） |
-| http://localhost:8000/console | 开发控制台（快速创建/查询任务） |
-| http://localhost:8000/docs | FastAPI 自动生成的 API 文档 |
-| http://localhost:8000/redoc | ReDoc 格式的 API 文档 |
+
+| 地址                                                             | 说明                   |
+| -------------------------------------------------------------- | -------------------- |
+| [http://localhost:8000/](http://localhost:8000/)               | 主界面（智能对话、任务管理等）      |
+| [http://localhost:8000/console](http://localhost:8000/console) | 开发控制台（快速创建/查询任务）     |
+| [http://localhost:8000/docs](http://localhost:8000/docs)       | FastAPI 自动生成的 API 文档 |
+| [http://localhost:8000/redoc](http://localhost:8000/redoc)     | ReDoc 格式的 API 文档     |
+
 
 ### 2.4 开发注意事项
 

@@ -15,6 +15,8 @@
         <span id="brandSub">文化传播智能体</span>
       </div>
       <div class="top-actions">
+        <span class="user-pill hidden" id="userPill"><span id="userLabel">--</span></span>
+        <button type="button" class="btn btn-light btn-sm" id="logoutBtn">退出</button>
         <span class="health-badge" id="healthBadge">检测服务中...</span>
         <select id="marketSelect" class="market-select">
           <option value="AFRICA" selected>AFRICA</option>
@@ -30,7 +32,9 @@
           <button class="nav-item active" data-view="dialog">智能对话</button>
           <button class="nav-item" data-view="tasks">任务管理</button>
           <button class="nav-item" data-view="material">文化素材</button>
+          <button class="nav-item" data-view="content">内容总结</button>
           <button class="nav-item" data-view="create">创建任务</button>
+          <button class="nav-item hidden" data-view="admin" id="navAdmin">管理</button>
         </nav>
 
         <section class="card resources" id="resourcePanel">
@@ -79,6 +83,54 @@
 
         <div class="material-grid" id="materialGrid">
           <p class="empty-hint">加载中...</p>
+        </div>
+      </section>
+
+      <!-- ===== Content summarize ===== -->
+      <section class="center-panel view-panel hidden" id="viewContent">
+        <div class="task-head card">
+          <h3>网页 / 文本文化总结</h3>
+          <span>抓取网页正文或粘贴内容，按目标市场生成文化适配分析</span>
+        </div>
+        <div class="create-form card">
+          <label for="sumMarket">目标市场</label>
+          <select id="sumMarket"></select>
+          <label for="sumUrl">网页 URL（可选）</label>
+          <input id="sumUrl" type="url" placeholder="https://..." />
+          <label for="sumText">或直接粘贴文本</label>
+          <textarea id="sumText" rows="8" placeholder="粘贴文章、脚本等..."></textarea>
+          <button type="button" id="sumSubmitBtn" class="btn btn-primary">生成总结</button>
+          <div class="feedback" id="sumFeedback"></div>
+          <div class="card sum-result hidden" id="sumResultWrap">
+            <h4 class="label">分析结果</h4>
+            <pre class="sum-result-pre" id="sumResult"></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Admin audit ===== -->
+      <section class="center-panel view-panel hidden" id="viewAdmin">
+        <div class="task-head card">
+          <h3>操作日志</h3>
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="btn btn-light btn-sm" id="refreshAuditBtn">刷新</button>
+            <a class="btn btn-light btn-sm" id="exportAuditLink" href="#" target="_blank">导出 CSV</a>
+          </div>
+        </div>
+        <div class="card audit-table-wrap">
+          <table class="audit-table" id="auditTable">
+            <thead>
+              <tr>
+                <th>时间</th>
+                <th>用户</th>
+                <th>IP</th>
+                <th>操作</th>
+                <th>详情</th>
+              </tr>
+            </thead>
+            <tbody id="auditTbody"></tbody>
+          </table>
+          <p class="empty-hint hidden" id="auditEmpty">暂无日志</p>
         </div>
       </section>
 

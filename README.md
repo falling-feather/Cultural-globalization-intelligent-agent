@@ -9,7 +9,9 @@ Agent Culture 是一个面向海外市场（主要目标：非洲地区）的 AI
 - **AI 视频生成**：将脚本提交至硅基流动 Wan 模型，异步生成视频内容
 - **文化规则引擎**：内置多市场文化规则库（语言偏好、推荐语气、禁忌用语），确保内容合规
 - **任务管理**：创建、查询、追踪视频生成任务的完整生命周期
-- **多市场支持**：预设 AFRICA、US 等市场配置，可扩展
+- **多市场支持**：预设 AFRICA、US、EU 等市场配置，可扩展
+- **登录与 JWT**：主界面需登录；管理员可查看操作审计日志、导出 CSV
+- **内容总结**：输入公开网页 URL 或粘贴正文，按目标市场生成文化适配分析（DeepSeek）
 
 ## 技术架构
 
@@ -67,7 +69,7 @@ pip install -r requirements.txt
 
 # 4. 配置环境变量
 cp .env.example .env
-# 编辑 .env，填入 API Key
+# 编辑 .env：填入 DeepSeek / 硅基流动 Key；并设置 JWT_SECRET、ADMIN_USERNAME、ADMIN_PASSWORD（首次启动会自动创建管理员）
 
 # 5. 启动服务
 uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
@@ -75,15 +77,15 @@ uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
 启动后访问：
 
-- 主界面：`http://localhost:8000/`
-- 开发控制台：`http://localhost:8000/console`
+- 主界面：`http://localhost:8000/`（将跳转登录页 `/app/login.html`，登录后进入应用）
+- 开发控制台：`http://localhost:8000/console`（需先在主站登录一次，浏览器会保存 token 供同域请求使用）
 - API 文档：`http://localhost:8000/docs`
 
 ### 阿里云 ECS（Git 拉取 + 长期运行）
 
 - **仓库**：<https://github.com/falling-feather/Cultural-globalization-intelligent-agent>  
 - **Linux**：`scripts/aliyun_start.sh`（默认端口 **902**）  
-- **Windows 图形界面服务器**：`scripts/aliyun_windows_start.ps1`（默认端口 **901**，适配已装 Git / Node 的环境）  
+- **Windows 图形界面服务器**：`scripts/aliyun_windows_start.ps1`（默认端口 **902**，与 Linux 一致；可用 `-Port` 修改）  
 
 完整步骤与安全组、防火墙说明见 [docs/ALIYUN_DEPLOY.md](docs/ALIYUN_DEPLOY.md)。
 
@@ -103,9 +105,39 @@ uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 | `WAN_MODEL`                   | Wan 视频模型        | `Wan-AI/Wan2.2-I2V-A14B` |
 | `SILICONFLOW_WAN_SUBMIT_PATH` | 视频提交路径          | `/video/submit`          |
 | `SILICONFLOW_WAN_QUERY_PATH`  | 视频查询路径          | `/video/status`          |
+| `JWT_SECRET`                  | JWT 签名密钥（生产务必更换） | 见 `.env.example`          |
+| `ADMIN_USERNAME` / `ADMIN_PASSWORD` | 首次无用户时自动创建管理员 | 可选，勿提交 Git           |
+| `TRUST_PROXY_HEADERS`         | 信任 `X-Forwarded-For`（反代后） | `false`                  |
 
+除 `/health`、`POST /api/v1/auth/login` 外，业务 API 需在请求头携带 `Authorization: Bearer <token>`。
 
 ## API 接口
+
+### 认证
+
+```
+POST /api/v1/auth/login
+Body: { "username": "...", "password": "..." }
+Response: { "access_token": "...", "token_type": "bearer", "username": "...", "role": "admin" }
+
+GET /api/v1/auth/me
+Header: Authorization: Bearer ...
+Response: { "username": "...", "role": "admin" }
+```
+
+### 管理员审计（仅 role=admin）
+
+```
+GET /api/v1/admin/audit-logs?limit=50&offset=0
+GET /api/v1/admin/audit-logs/export
+```
+
+### 内容文化总结（需登录）
+
+```
+POST /api/v1/content/summarize
+Body: { "source_type": "url"|"text", "url"?: "https://...", "text"?: "...", "market": "AFRICA" }
+```
 
 ### 对话
 
@@ -154,9 +186,10 @@ agent-culture/
 │   └── culture/              # 文化规则数据
 │       ├── africa.json       # 非洲市场规则
 │       ├── us.json           # 美国市场规则
+│       ├── eu.json           # 欧盟市场规则
 │       └── default.json      # 默认规则（兜底）
 ├── src/
-│   ├── main.py               # FastAPI 入口（CORS、路由、静态文件）
+│   ├── main.py               # FastAPI 入口（CORS、限流、审计中间件、路由）
 │   ├── web/
 │   │   └── index.html        # 开发控制台
 │   ├── core/

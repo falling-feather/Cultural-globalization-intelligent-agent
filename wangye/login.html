@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>登录 — 文化传播智能体</title>
+  <link rel="stylesheet" href="/app/styles.css" />
+</head>
+<body class="login-body">
+  <div class="login-wrap">
+    <header class="login-topbar">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <strong>小飞</strong>
+        <span class="brand-sub">文化传播智能体</span>
+      </div>
+    </header>
+    <main class="login-card card">
+      <h1 class="login-title">登录</h1>
+      <p class="login-hint">请使用管理员或已开通的账号登录。首次部署请在服务器 <code>.env</code> 中配置 <code>ADMIN_USERNAME</code> 与 <code>ADMIN_PASSWORD</code>。</p>
+      <label class="login-label" for="username">用户名</label>
+      <input id="username" type="text" autocomplete="username" class="login-input" />
+      <label class="login-label" for="password">密码</label>
+      <input id="password" type="password" autocomplete="current-password" class="login-input" />
+      <button type="button" id="loginBtn" class="btn btn-primary login-submit">登录</button>
+      <p id="loginFeedback" class="feedback error" style="margin-top:10px;min-height:20px;"></p>
+    </main>
+  </div>
+  <script>
+    const TOKEN_KEY = "agent_culture_token";
+    const API_BASE = window.location.origin;
+
+    async function login() {
+      const u = document.getElementById("username").value.trim();
+      const p = document.getElementById("password").value;
+      const fb = document.getElementById("loginFeedback");
+      const btn = document.getElementById("loginBtn");
+      fb.textContent = "";
+      if (!u || !p) {
+        fb.textContent = "请输入用户名和密码";
+        return;
+      }
+      btn.disabled = true;
+      try {
+        const res = await fetch(API_BASE + "/api/v1/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: u, password: p }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          fb.textContent = data.detail || "登录失败";
+          return;
+        }
+        localStorage.setItem(TOKEN_KEY, data.access_token);
+        window.location.href = "/app/";
+      } catch (e) {
+        fb.textContent = String(e.message || e);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById("loginBtn").addEventListener("click", login);
+    document.getElementById("password").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") login();
+    });
+    if (localStorage.getItem(TOKEN_KEY)) {
+      window.location.href = "/app/";
+    }
+  </script>
+</body>
+</html>

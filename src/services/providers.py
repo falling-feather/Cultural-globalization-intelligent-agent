@@ -145,3 +145,57 @@ def query_video_with_siliconflow(task_id: str) -> dict:
         "video_url": video_url,
         "error_message": error_message,
     }
+
+
+def summarize_content_for_market(text: str, market: str, market_rules: dict) -> str:
+    """Analyze pasted or fetched text for cross-cultural communication / video adaptation."""
+    if not settings.deepseek_api_key:
+        raise ProviderError("DEEPSEEK_API_KEY is missing")
+
+    tone_prefs = ", ".join(market_rules.get("tone_preferences", ["clear"]))
+    taboo_terms = ", ".join(market_rules.get("taboo_terms", [])) or "N/A"
+    language = market_rules.get("language", "en")
+
+    system_prompt = (
+        "You are a senior cross-cultural communications analyst for overseas short-video and social content. "
+        "Output clear Markdown with headings. Be concrete and actionable."
+    )
+    user_prompt = (
+        f"Target market: {market}. Preferred tones for this market: {tone_prefs}. "
+        f"Avoid or flag these taboo/sensitive terms: {taboo_terms}. "
+        f"Primary audience language context: {language}.\n\n"
+        "Below is source content (article/page excerpt). Analyze it and produce:\n"
+        "## 1. 内容摘要（3–6 句）\n"
+        "## 2. 当前文化风格与语气（正式/口语、价值倾向、叙事方式）\n"
+        "## 3. 若面向该目标市场传播的风险点与禁忌提醒\n"
+        "## 4. 适配建议（标题角度、口播切入点、可删改点）\n"
+        "## 5. 若做成 60–90 秒短视频的 3 条一句话 hook 建议（可用中文或中英混合，按内容定）\n\n"
+        "---\n"
+        f"{text}"
+    )
+
+    url = settings.deepseek_base_url.rstrip("/") + "/chat/completions"
+    payload = {
+        "model": settings.deepseek_model,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        "temperature": 0.5,
+    }
+    headers = {
+        "Authorization": f"Bearer {settings.deepseek_api_key}",
+        "Content-Type": "application/json",
+    }
+
+    with httpx.Client(timeout=120) as client:
+        response = client.post(url, headers=headers, content=json.dumps(payload))
+
+    if response.status_code >= 400:
+        raise ProviderError(f"DeepSeek API error: {response.status_code} {response.text}")
+
+    data = response.json()
+    try:
+        return data["choices"][0]["message"]["content"].strip()
+    except Exception as exc:
+        raise ProviderError(f"DeepSeek response parse failed: {exc}") from exc

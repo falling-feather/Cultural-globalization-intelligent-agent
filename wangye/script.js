@@ -1,27 +1,58 @@
-/* ===== API Layer ===== */
+/* ===== Auth & API ===== */
 
+const TOKEN_KEY = "agent_culture_token";
 const API_BASE = window.location.origin;
+
+function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+function authHeaders(json = true) {
+  const t = getToken();
+  const h = {};
+  if (json) h["Content-Type"] = "application/json";
+  if (t) h.Authorization = `Bearer ${t}`;
+  return h;
+}
+
+function redirectLogin() {
+  localStorage.removeItem(TOKEN_KEY);
+  window.location.href = "/app/login.html";
+}
 
 async function apiPost(path, body) {
   const res = await fetch(`${API_BASE}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders(true),
     body: JSON.stringify(body),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+  let data = {};
+  try {
+    data = await res.json();
+  } catch {
+    /* empty */
+  }
+  if (res.status === 401) redirectLogin();
+  if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail || data));
   return data;
 }
 
 async function apiGet(path) {
-  const res = await fetch(`${API_BASE}${path}`);
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+  const res = await fetch(`${API_BASE}${path}`, { headers: authHeaders(true) });
+  let data = {};
+  try {
+    data = await res.json();
+  } catch {
+    /* empty */
+  }
+  if (res.status === 401) redirectLogin();
+  if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail || data));
   return data;
 }
 
 const api = {
-  health: () => apiGet("/health"),
+  health: () => fetch(`${API_BASE}/health`).then((r) => r.json()),
+  me: () => apiGet("/api/v1/auth/me"),
   chat: (message, market, history) =>
     apiPost("/api/v1/chat", { message, market, history }),
   createJob: (payload) => apiPost("/api/v1/jobs", payload),
@@ -31,6 +62,9 @@ const api = {
   getJobScript: (id) => apiGet(`/api/v1/jobs/${id}/script`),
   listMarkets: () => apiGet("/api/v1/culture"),
   getMarketRules: (market) => apiGet(`/api/v1/culture/${market}`),
+  listAuditLogs: (limit = 100, offset = 0) =>
+    apiGet(`/api/v1/admin/audit-logs?limit=${limit}&offset=${offset}`),
+  summarize: (body) => apiPost("/api/v1/content/summarize", body),
 };
 
 /* ===== State ===== */
@@ -40,6 +74,7 @@ let chatHistory = [];
 let currentMarket = "AFRICA";
 let allMarkets = [];
 let isWaitingReply = false;
+let currentUser = null;
 
 /* ===== DOM Refs ===== */
 
@@ -47,6 +82,10 @@ const $ = (id) => document.getElementById(id);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
 const els = {
+  userPill: $("userPill"),
+  userLabel: $("userLabel"),
+  logoutBtn: $("logoutBtn"),
+  navAdmin: $("navAdmin"),
   healthBadge: $("healthBadge"),
   marketSelect: $("marketSelect"),
   newTaskBtn: $("newTaskBtn"),
@@ -54,6 +93,8 @@ const els = {
   viewDialog: $("viewDialog"),
   viewTasks: $("viewTasks"),
   viewMaterial: $("viewMaterial"),
+  viewContent: $("viewContent"),
+  viewAdmin: $("viewAdmin"),
   viewCreate: $("viewCreate"),
 
   chatMessages: $("chatMessages"),
@@ -66,6 +107,19 @@ const els = {
   refreshJobsBtn: $("refreshJobsBtn"),
 
   materialGrid: $("materialGrid"),
+
+  sumMarket: $("sumMarket"),
+  sumUrl: $("sumUrl"),
+  sumText: $("sumText"),
+  sumSubmitBtn: $("sumSubmitBtn"),
+  sumFeedback: $("sumFeedback"),
+  sumResultWrap: $("sumResultWrap"),
+  sumResult: $("sumResult"),
+
+  auditTbody: $("auditTbody"),
+  auditEmpty: $("auditEmpty"),
+  refreshAuditBtn: $("refreshAuditBtn"),
+  exportAuditLink: $("exportAuditLink"),
 
   createTopic: $("createTopic"),
   createMarket: $("createMarket"),
@@ -85,12 +139,38 @@ const els = {
   modalBody: $("modalBody"),
 };
 
+/* ===== Session ===== */
+
+async function ensureSession() {
+  const t = getToken();
+  if (!t) {
+    window.location.href = "/app/login.html";
+    return false;
+  }
+  try {
+    currentUser = await api.me();
+    els.userPill.classList.remove("hidden");
+    els.userLabel.textContent = `${currentUser.username} (${currentUser.role})`;
+    if (currentUser.role === "admin") {
+      els.navAdmin.classList.remove("hidden");
+    }
+    return true;
+  } catch {
+    redirectLogin();
+    return false;
+  }
+}
+
+els.logoutBtn.addEventListener("click", () => redirectLogin());
+
 /* ===== Navigation ===== */
 
 const viewMap = {
   dialog: els.viewDialog,
   tasks: els.viewTasks,
   material: els.viewMaterial,
+  content: els.viewContent,
+  admin: els.viewAdmin,
   create: els.viewCreate,
 };
 
@@ -107,6 +187,7 @@ function switchView(viewKey) {
 
   if (viewKey === "tasks") loadJobs();
   if (viewKey === "material") loadMaterial();
+  if (viewKey === "admin") loadAuditLogs();
 }
 
 $$(".nav-item").forEach((btn) => {
@@ -150,9 +231,10 @@ async function loadMarkets() {
     if (options) {
       els.marketSelect.innerHTML = options;
       els.createMarket.innerHTML = options;
+      els.sumMarket.innerHTML = options;
     }
   } catch {
-    // keep default options
+    // keep default
   }
 }
 
@@ -322,7 +404,7 @@ async function showJobDetail(jobId) {
             </div>`;
         }
       } catch {
-        // script not available
+        /* skip */
       }
     }
 
@@ -400,6 +482,94 @@ async function loadMaterial() {
   }
 }
 
+/* ===== Content summarize ===== */
+
+async function submitSummarize() {
+  const url = els.sumUrl.value.trim();
+  const text = els.sumText.value.trim();
+  const market = els.sumMarket.value;
+  els.sumFeedback.textContent = "";
+  els.sumFeedback.className = "feedback";
+
+  let source_type = "text";
+  if (url) source_type = "url";
+  else if (!text) {
+    els.sumFeedback.textContent = "请填写 URL 或粘贴文本";
+    els.sumFeedback.classList.add("error");
+    return;
+  }
+
+  els.sumSubmitBtn.disabled = true;
+  els.sumSubmitBtn.textContent = "分析中...";
+  try {
+    const body =
+      source_type === "url"
+        ? { source_type: "url", url, market }
+        : { source_type: "text", text, market };
+    const data = await api.summarize(body);
+    els.sumResult.textContent = data.summary;
+    els.sumResultWrap.classList.remove("hidden");
+  } catch (err) {
+    els.sumFeedback.textContent = err.message;
+    els.sumFeedback.classList.add("error");
+  } finally {
+    els.sumSubmitBtn.disabled = false;
+    els.sumSubmitBtn.textContent = "生成总结";
+  }
+}
+
+els.sumSubmitBtn.addEventListener("click", submitSummarize);
+
+/* ===== Admin audit ===== */
+
+async function loadAuditLogs() {
+  els.auditTbody.innerHTML = "";
+  try {
+    const data = await api.listAuditLogs(200, 0);
+    if (!data.logs || data.logs.length === 0) {
+      els.auditEmpty.classList.remove("hidden");
+      return;
+    }
+    els.auditEmpty.classList.add("hidden");
+    els.auditTbody.innerHTML = data.logs
+      .map(
+        (row) => `
+      <tr>
+        <td>${escapeHtml(row.created_at)}</td>
+        <td>${escapeHtml(row.username)}</td>
+        <td>${escapeHtml(row.client_ip)}</td>
+        <td>${escapeHtml(row.action)}</td>
+        <td class="audit-detail"><code>${escapeHtml((row.detail || "").slice(0, 200))}</code></td>
+      </tr>`
+      )
+      .join("");
+  } catch (err) {
+    els.auditEmpty.classList.remove("hidden");
+    els.auditEmpty.textContent = `加载失败: ${err.message}`;
+  }
+}
+
+els.refreshAuditBtn.addEventListener("click", loadAuditLogs);
+
+els.exportAuditLink.addEventListener("click", async (e) => {
+  e.preventDefault();
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/admin/audit-logs/export`, {
+      headers: authHeaders(false),
+    });
+    if (res.status === 401) redirectLogin();
+    if (!res.ok) throw new Error("导出失败");
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "audit_logs.csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch (err) {
+    alert(String(err.message || err));
+  }
+});
+
 /* ===== Create Job ===== */
 
 function setCreateFeedback(text, type = "") {
@@ -447,7 +617,7 @@ async function loadJobsSilent() {
     const data = await api.listJobs(5);
     updateMetrics(data.total, data.jobs || []);
   } catch {
-    // silent
+    /* silent */
   }
 }
 
@@ -464,6 +634,8 @@ function escapeHtml(str) {
 /* ===== Init ===== */
 
 async function init() {
+  const ok = await ensureSession();
+  if (!ok) return;
   await Promise.all([checkHealth(), loadMarkets(), loadJobsSilent()]);
 }
 

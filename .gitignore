@@ -17,6 +17,7 @@ ENV/
 
 # Storage runtime artifacts
 storage/task_store.db
+storage/auth.db
 storage/outputs/*.json
 
 # Server runtime (Windows/Linux 启动脚本写入)

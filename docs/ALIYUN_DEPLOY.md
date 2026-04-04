@@ -1,6 +1,6 @@
 # 阿里云 ECS 部署说明（Git 拉取 + 一键启动）
 
-官方仓库：**https://github.com/falling-feather/Cultural-globalization-intelligent-agent**
+官方仓库：**[https://github.com/falling-feather/Cultural-globalization-intelligent-agent](https://github.com/falling-feather/Cultural-globalization-intelligent-agent)**
 
 ---
 
@@ -26,16 +26,17 @@ cd Cultural-globalization-intelligent-agent
 
 ### 1. 安全组入方向
 
-1. 登录 [云服务器 ECS 控制台](https://ecs.console.aliyun.com/) → 实例 → 安全组 → **配置规则**。  
+1. 登录 [云服务器 ECS 控制台](https://ecs.console.aliyun.com/) → 实例 → 安全组 → **配置规则**。
 2. **入方向** 放行你实际使用的端口，例如：
 
-| 场景 | 端口 | 说明 |
-|------|------|------|
-| Windows 脚本默认 | **TCP 901** | [`scripts/aliyun_windows_start.ps1`](../scripts/aliyun_windows_start.ps1) 默认 `901`，与你现有 901 习惯一致 |
-| Linux 脚本默认 | **TCP 902** | [`scripts/aliyun_start.sh`](../scripts/aliyun_start.sh) 默认 `902` |
+
+| 场景                       | 端口          | 说明                                                                                                                                               |
+| ------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Windows / Linux 脚本默认** | **TCP 902** | `[aliyun_windows_start.ps1](../scripts/aliyun_windows_start.ps1)` 与 `[aliyun_start.sh](../scripts/aliyun_start.sh)` 默认均为 **902**，与安全组、防火墙保持一致即可。 |
+
 
 - **授权对象**：测试可用 `0.0.0.0/0`；生产建议改为固定 IP 或 VPN 网段。  
-- 若同一安全组上已有 **901** 规则且复用该端口，只需保证未被其它程序独占即可。
+- 若需改用其它端口（例如 **901**），请同时修改：脚本参数 `-Port` / 环境变量 `AGENT_CULTURE_PORT`、安全组与 Windows 防火墙规则。
 
 ### 2. 公网与带宽
 
@@ -43,7 +44,7 @@ cd Cultural-globalization-intelligent-agent
 
 ### 3. 域名与备案（可选）
 
-- 使用 **`http://公网IP:端口`** 一般无需备案。  
+- 使用 `http://公网IP:端口` 一般无需备案。  
 - 使用 **80/443 + 域名** 且为中国大陆机房时，需按阿里云要求完成 **ICP 备案**。
 
 ---
@@ -58,17 +59,17 @@ cd Cultural-globalization-intelligent-agent
 
 若尚未安装 Python：
 
-1. 打开浏览器下载 [Python 3.11+ Windows 安装包](https://www.python.org/downloads/windows/)。  
-2. 安装时勾选 **Add python.exe to PATH**。  
+1. 打开浏览器下载 [Python 3.11+ Windows 安装包](https://www.python.org/downloads/windows/)。
+2. 安装时勾选 **Add python.exe to PATH**。
 3. 重新打开 **PowerShell**，执行 `python --version` 或 `py -3.11 --version` 确认。
 
 ### 2.2 Windows 防火墙
 
-1. **控制面板** → **Windows Defender 防火墙** → **高级设置**。  
-2. **入站规则** → **新建规则** → **端口** → **TCP**，特定本地端口填 **`901`**（若你改用其它端口，与此一致）。  
-3. 允许连接 → 勾选 **域 / 专用 / 公用**（按你的网络场景）→ 命名如 `AgentCulture-901`。
+1. **控制面板** → **Windows Defender 防火墙** → **高级设置**。
+2. **入站规则** → **新建规则** → **端口** → **TCP**，特定本地端口填 **902**（若你改用其它端口，与此一致）。
+3. 允许连接 → 勾选 **域 / 专用 / 公用**（按你的网络场景）→ 命名如 `AgentCulture-902`。
 
-### 2.3 一键启动（默认端口 901）
+### 2.3 一键启动（默认端口 902）
 
 在仓库根目录打开 **PowerShell**（建议「以管理员身份运行」仅在你需要写系统目录时；一般用户目录不必）：
 
@@ -81,7 +82,7 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force
 可选参数：
 
 ```powershell
-# 指定端口（与安全组、防火墙一致）
+# 改用其它端口（须与安全组、防火墙一致）
 .\scripts\aliyun_windows_start.ps1 -Port 901
 
 # 跳过本次 git pull
@@ -91,7 +92,7 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force
 .\scripts\aliyun_windows_start.ps1 -Reload
 ```
 
-脚本会：`git pull` → 创建/更新 `.venv` → `pip install` → 在 **`0.0.0.0:901`** 后台启动 Uvicorn（**2 workers**，无 `--reload`）。
+脚本会：`git pull` → 创建/更新 `.venv` → `pip install` → 在 `**0.0.0.0:902**` 后台启动 Uvicorn（**2 workers**，无 `--reload`）。
 
 日志目录：`logs\agent-culture.log`、`logs\agent-culture.err.log`。
 
@@ -107,31 +108,31 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force
 
 **方案 A：任务计划程序**
 
-1. **任务计划程序** → **创建任务**（不要用「创建基本任务」以便配置完整）。  
-2. **常规**：勾选「不管用户是否登录都要运行」、**使用最高权限运行**（若需要）。  
-3. **触发器**：「启动时」或「登录时」。  
-4. **操作**：启动程序  
-   - 程序：`powershell.exe`  
-   - 参数：`-NoProfile -ExecutionPolicy Bypass -File "C:\path\to\Cultural-globalization-intelligent-agent\scripts\aliyun_windows_start.ps1" -NoGitPull`  
-   - 起始于：`C:\path\to\Cultural-globalization-intelligent-agent`  
+1. **任务计划程序** → **创建任务**（不要用「创建基本任务」以便配置完整）。
+2. **常规**：勾选「不管用户是否登录都要运行」、**使用最高权限运行**（若需要）。
+3. **触发器**：「启动时」或「登录时」。
+4. **操作**：启动程序
+  - 程序：`powershell.exe`  
+  - 参数：`-NoProfile -ExecutionPolicy Bypass -File "C:\path\to\Cultural-globalization-intelligent-agent\scripts\aliyun_windows_start.ps1" -NoGitPull`  
+  - 起始于：`C:\path\to\Cultural-globalization-intelligent-agent`
 5. 日常更新代码后，可再建一个「仅手动运行」的任务，参数去掉 `-NoGitPull`，或登录后手动执行一次带 `git pull` 的脚本。
 
 **方案 B：NSSM（将 Uvicorn 注册为 Windows 服务）**
 
-1. 下载 [NSSM](https://nssm.cc/download)，解压后以管理员 CMD 执行：  
-   `nssm install AgentCulture`  
-2. **Application**：`C:\path\to\Cultural-globalization-intelligent-agent\.venv\Scripts\python.exe`  
-3. **Arguments**：`-m uvicorn src.main:app --host 0.0.0.0 --port 901 --workers 2`  
-4. **Startup directory**：仓库根目录路径。  
+1. 下载 [NSSM](https://nssm.cc/download)，解压后以管理员 CMD 执行：
+  `nssm install AgentCulture`
+2. **Application**：`C:\path\to\Cultural-globalization-intelligent-agent\.venv\Scripts\python.exe`
+3. **Arguments**：`-m uvicorn src.main:app --host 0.0.0.0 --port 902 --workers 2`
+4. **Startup directory**：仓库根目录路径。
 5. 安装服务后：`nssm start AgentCulture`。
 
 ### 2.5 访问地址
 
 ```text
-http://<ECS公网IP>:901/
+http://<ECS公网IP>:902/
 ```
 
-API 文档：`http://<公网IP>:901/docs`
+API 文档：`http://<公网IP>:902/docs`
 
 ---
 
@@ -162,7 +163,7 @@ chmod +x scripts/aliyun_start.sh scripts/aliyun_stop.sh
 ./scripts/aliyun_start.sh
 ```
 
-默认 **`AGENT_CULTURE_PORT=902`**。自定义端口：
+默认 `**AGENT_CULTURE_PORT=902**`。自定义端口：
 
 ```bash
 AGENT_CULTURE_PORT=902 ./scripts/aliyun_start.sh
@@ -206,15 +207,13 @@ sudo systemctl restart agent-culture
 
 ## 五、常见问题
 
-1. **浏览器无法访问**  
-   - 核对 **安全组** 与 **系统防火墙** 端口是否与脚本一致（Windows 默认 **901**，Linux 默认 **902**）。  
-   - 本机自测：浏览器访问 `http://127.0.0.1:901/`（或你的端口）。
+1. **浏览器无法访问**
+  - 核对 **安全组** 与 **系统防火墙** 端口是否与脚本一致（Windows 与 Linux 脚本默认均为 **902**）。  
+  - 本机自测：浏览器访问 `http://127.0.0.1:902/`（或你自定义的端口）。
+2. **对话 / 任务报错**
+  - 检查 `.env` 中 API Key、`USE_REAL_APIS`。  
+  - 确认 ECS 可访问外网。
+3. **Windows 上提示无法执行脚本**
+  - `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`。
 
-2. **对话 / 任务报错**  
-   - 检查 `.env` 中 API Key、`USE_REAL_APIS`。  
-   - 确认 ECS 可访问外网。
-
-3. **Windows 上提示无法执行脚本**  
-   - `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`。
-
-更多通用说明见 [`GUIDE.md`](GUIDE.md)。
+更多通用说明见 [GUIDE.md](GUIDE.md)。

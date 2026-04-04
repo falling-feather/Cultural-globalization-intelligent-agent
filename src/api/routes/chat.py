@@ -1,9 +1,11 @@
 import json
+from typing import Annotated
 
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from src.api.deps import CurrentUser, get_current_user
 from src.core.settings import settings
 from src.services.culture import culture_service
 
@@ -27,7 +29,10 @@ class ChatResponse(BaseModel):
 
 
 @router.post("/chat", response_model=ChatResponse)
-def chat(request: ChatRequest) -> ChatResponse:
+def chat(
+    _user: Annotated[CurrentUser, Depends(get_current_user)],
+    request: ChatRequest,
+) -> ChatResponse:
     if not settings.deepseek_api_key:
         raise HTTPException(status_code=503, detail="DEEPSEEK_API_KEY is not configured")
 
