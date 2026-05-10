@@ -30,6 +30,8 @@
 3. 进入「API 密钥」页面创建密钥
 4. 将密钥填入 `.env` 文件的 `SILICONFLOW_API_KEY` 字段
 
+> 视频模型：本项目使用 `Wan-AI/Wan2.2-T2V-A14B`（文本生视频），需确认账号已开通该模型权限。模型配置见 `.env` 中 `WAN_MODEL` 字段。
+
 > 注意：如果暂时没有 API Key，可将 `USE_REAL_APIS` 设为 `false`，系统会使用模拟数据运行，方便调试前端和流程。
 
 ---
