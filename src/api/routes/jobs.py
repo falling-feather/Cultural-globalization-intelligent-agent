@@ -12,6 +12,11 @@ from src.services.task_store import task_store
 router = APIRouter(tags=["jobs"])
 
 
+@router.get("/jobs/stats")
+def jobs_stats(_user: Annotated[CurrentUser, Depends(get_current_user)]) -> dict:
+    return task_store.stats()
+
+
 @router.get("/jobs")
 def list_jobs(
     _user: Annotated[CurrentUser, Depends(get_current_user)],

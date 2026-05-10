@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from src.api.deps import CurrentUser, get_current_user
 from src.core.settings import settings
 from src.services.culture import culture_service
+from src.services.runtime_config import runtime_config
 
 router = APIRouter(tags=["chat"])
 
@@ -33,7 +34,7 @@ def chat(
     _user: Annotated[CurrentUser, Depends(get_current_user)],
     request: ChatRequest,
 ) -> ChatResponse:
-    if not settings.deepseek_api_key:
+    if not runtime_config.deepseek_api_key:
         raise HTTPException(status_code=503, detail="DEEPSEEK_API_KEY is not configured")
 
     market_rules = culture_service.get_market_rules(request.market)
@@ -56,14 +57,14 @@ def chat(
         messages.append({"role": msg.role, "content": msg.content})
     messages.append({"role": "user", "content": request.message})
 
-    url = settings.deepseek_base_url.rstrip("/") + "/chat/completions"
+    url = runtime_config.deepseek_base_url.rstrip("/") + "/chat/completions"
     payload = {
-        "model": settings.deepseek_model,
+        "model": runtime_config.deepseek_model,
         "messages": messages,
         "temperature": 0.7,
     }
     headers = {
-        "Authorization": f"Bearer {settings.deepseek_api_key}",
+        "Authorization": f"Bearer {runtime_config.deepseek_api_key}",
         "Content-Type": "application/json",
     }
 

@@ -11,7 +11,20 @@ Agent Culture 是一个面向海外市场（主要目标：非洲地区）的 AI
 - **任务管理**：创建、查询、追踪视频生成任务的完整生命周期
 - **多市场支持**：预设 AFRICA、US、EU 等市场配置，可扩展
 - **登录与 JWT**：主界面需登录；管理员可查看操作审计日志、导出 CSV
+- **用户注册与角色管理**：支持自助注册（首位注册者自动晋升为管理员），管理员可在前端查看 / 删除用户
+- **多市场会话隔离**：聊天历史按市场（AFRICA / US / EU / DEFAULT）分别落盘 localStorage，切换市场即切换上下文
 - **内容总结**：输入公开网页 URL 或粘贴正文，按目标市场生成文化适配分析（DeepSeek）
+- **任务实时统计**：右侧仪表盘按状态聚合 + 各市场分布条形图，运行中任务自动 6s 轮询刷新
+
+## 创新点 / 软著要点
+
+1. **「文化规则引擎 → LLM Prompt 注入」机制**：将各目标市场的语言、推荐语气、禁忌词以 JSON 数据驱动方式注入到对话 / 脚本 / 总结的 system prompt，实现"无需改代码即可扩展新市场"，是本项目区别于通用 ChatGPT 套壳产品的核心差异点（见 `src/services/culture.py` + `src/services/pipeline.py`）。
+2. **双模型异步流水线**：DeepSeek 负责脚本与文化分析（同步），SiliconFlow Wan2.2 负责视频生成（异步轮询），统一在 `src/services/pipeline.py` 通过 SQLite 状态机调度，前端通过任务列表轮询观察。
+3. **URL 抓取 SSRF 安全防护**：`src/services/url_safety.py` 在调用「URL 文化总结」前主动解析域名 → IP，阻断私网 / 本机 / 链路本地等敏感地址，杜绝 OWASP A10 风险。
+4. **完整安全控制平面**：JWT (HS256 + bcrypt) · 角色（admin / user）· 全局限流 (slowapi) · 审计日志中间件（自动记录写操作 + 登录 + 管理员查询）· CSV 导出 · 自助注册速率限制。
+5. **跨市场文化洞察**：「内容洞察」模块允许把已有素材按目标市场重新做文化适配分析，输出 Markdown 结构化建议，是从 0→1 创作之外的「再加工」工具，扩展了智能体的应用场景。
+6. **零构建前端**：纯原生 HTML/CSS/JS，自研轻量 Markdown 渲染器（`renderMarkdown` in `wangye/script.js`），无 webpack / npm 依赖，便于软著审核中"提交可读源代码"的要求。
+7. **设计语言自洽**：深靛蓝 + 暖金 + 米色的"传播品牌"配色与字间排版，刻意区别于通用 SaaS / AI 产品的蓝紫色调，体现作品独立美学。
 
 ## 技术架构
 
@@ -120,16 +133,24 @@ POST /api/v1/auth/login
 Body: { "username": "...", "password": "..." }
 Response: { "access_token": "...", "token_type": "bearer", "username": "...", "role": "admin" }
 
+POST /api/v1/auth/register        # 自助注册（限流 5/min；首位用户自动成为 admin）
+Body: { "username": "...", "password": "..." }
+Response: { "access_token": "...", "token_type": "bearer", "username": "...", "role": "..." }
+
 GET /api/v1/auth/me
 Header: Authorization: Bearer ...
 Response: { "username": "...", "role": "admin" }
+
+POST /api/v1/auth/logout          # 记录登出审计
 ```
 
-### 管理员审计（仅 role=admin）
+### 管理员（仅 role=admin）
 
 ```
 GET /api/v1/admin/audit-logs?limit=50&offset=0
-GET /api/v1/admin/audit-logs/export
+GET /api/v1/admin/audit-logs/export       # CSV 导出
+GET /api/v1/admin/users                    # 列出全部用户
+DELETE /api/v1/admin/users/{username}      # 删除用户（不能删自己）
 ```
 
 ### 内容文化总结（需登录）
@@ -162,6 +183,9 @@ Response: { "id": "...", "status": "success", "request": {...}, "result": {...} 
 
 GET /api/v1/jobs/{job_id}/script
 Response: { "job_id": "...", "script": "...", "status": "success" }
+
+GET /api/v1/jobs/stats
+Response: { "total": 12, "by_status": {"success": 8, "failed": 1, "running": 3}, "by_market": [{"market":"AFRICA","count":7}, ...] }
 ```
 
 ### 文化规则

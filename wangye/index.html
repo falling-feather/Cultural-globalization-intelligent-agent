@@ -3,210 +3,421 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>文化传播智能体</title>
-  <link rel="stylesheet" href="/app/styles.css" />
+  <title>小飞 · 跨文化传播智能体</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230f2236'/><path d='M6 17 L26 7 L19 26 L16 18 Z' fill='%23c98a2b'/></svg>" />
 </head>
-<body>
+<body data-role="user">
   <div class="app">
+    <!-- ===== Top Bar ===== -->
     <header class="topbar">
       <div class="brand">
-        <span class="brand-dot"></span>
-        <strong id="brandName">小飞</strong>
-        <span id="brandSub">文化传播智能体</span>
+        <span class="brand-logo" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="currentColor"><path d="M4 17 L28 5 L21 28 L16 18 Z"/></svg>
+        </span>
+        <span class="brand-name">小飞</span>
+        <span class="brand-sub">跨文化传播智能体</span>
       </div>
+
       <div class="top-actions">
-        <span class="user-pill hidden" id="userPill"><span id="userLabel">--</span></span>
-        <button type="button" class="btn btn-light btn-sm" id="logoutBtn">退出</button>
-        <span class="health-badge" id="healthBadge">检测服务中...</span>
-        <select id="marketSelect" class="market-select">
-          <option value="AFRICA" selected>AFRICA</option>
-        </select>
-        <button id="newTaskBtn" class="btn btn-primary">+ 新建任务</button>
+        <span class="health-pill" id="healthPill"><span class="dot"></span><span id="healthText">检测中…</span></span>
+
+        <div class="market-picker">
+          <label for="marketSelect">市场</label>
+          <select id="marketSelect">
+            <option value="AFRICA" selected>AFRICA</option>
+          </select>
+        </div>
+
+        <div class="user-menu">
+          <button class="user-trigger" id="userTrigger" type="button">
+            <span class="avatar" id="userAvatar">U</span>
+            <span class="user-name" id="userName">…</span>
+            <span class="user-role user" id="userRole">user</span>
+          </button>
+          <div class="user-popover" id="userPopover" hidden>
+            <div class="pop-info" id="popInfo">未登录</div>
+            <div class="pop-divider"></div>
+            <button class="pop-item" data-action="profile">账号信息</button>
+            <button class="pop-item" data-action="docs">查看 API 文档</button>
+            <div class="pop-divider"></div>
+            <button class="pop-item danger" data-action="logout">退出登录</button>
+          </div>
+        </div>
       </div>
     </header>
 
-    <main class="layout">
+    <!-- ===== Layout ===== -->
+    <div class="layout">
+      <!-- ===== Sidebar ===== -->
       <aside class="sidebar">
-        <h2 id="sidebarTitle">导航</h2>
-        <nav class="nav-list">
-          <button class="nav-item active" data-view="dialog">智能对话</button>
-          <button class="nav-item" data-view="tasks">任务管理</button>
-          <button class="nav-item" data-view="material">文化素材</button>
-          <button class="nav-item" data-view="content">内容总结</button>
-          <button class="nav-item" data-view="create">创建任务</button>
-          <button class="nav-item hidden" data-view="admin" id="navAdmin">管理</button>
-        </nav>
+        <div class="side-title">工作台</div>
+        <button class="nav-item active" data-view="dialog">
+          <span class="nav-ico">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M3 2h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H8.5L5 15v-3H3a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/></svg>
+          </span>
+          智能对话
+        </button>
+        <button class="nav-item" data-view="create">
+          <span class="nav-ico">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M7 1h2v6h6v2H9v6H7V9H1V7h6z"/></svg>
+          </span>
+          创建任务
+        </button>
+        <button class="nav-item" data-view="tasks">
+          <span class="nav-ico">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M2 3h12v2H2zm0 4h12v2H2zm0 4h12v2H2z"/></svg>
+          </span>
+          任务管理
+        </button>
+        <button class="nav-item" data-view="material">
+          <span class="nav-ico">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM2.4 8.5h2.7c.1 1.5.4 2.8.9 3.7A5.5 5.5 0 0 1 2.4 8.5zm0-1A5.5 5.5 0 0 1 6 3.8c-.5 1-.8 2.2-.9 3.7H2.4zm6.5 6.6c-.5-.4-1-1.7-1.2-3.6h2.7c-.2 1.9-.7 3.2-1.5 3.6zM6.6 7.5C6.7 5.5 7.2 4.2 8 3.8c.8.4 1.3 1.7 1.5 3.7H6.6zm4.4 1c-.1 1.5-.4 2.8-.9 3.7a5.5 5.5 0 0 0 3.5-3.7H11zm0-1A5.5 5.5 0 0 0 7.5 3.8c.5 1 .8 2.2.9 3.7H11z"/></svg>
+          </span>
+          文化素材
+        </button>
+        <button class="nav-item" data-view="summarize">
+          <span class="nav-ico">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M3 1h7l3 3v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm6 1v3h3"/></svg>
+          </span>
+          内容洞察
+        </button>
 
-        <section class="card resources" id="resourcePanel">
-          <h3>服务状态</h3>
-          <p id="resLine1">检测中...</p>
-          <p id="resLine2">--</p>
-        </section>
+        <div class="side-title" style="margin-top:18px;">管理</div>
+        <button class="nav-item admin-only" data-view="admin">
+          <span class="nav-ico">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8 0l7 3v5c0 4-3 7-7 8-4-1-7-4-7-8V3l7-3z"/></svg>
+          </span>
+          审计日志
+        </button>
+        <button class="nav-item admin-only" data-view="users">
+          <span class="nav-ico">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M5 7a3 3 0 1 1 6 0 3 3 0 0 1-6 0zm-3 7c0-2.5 2.7-4.5 6-4.5s6 2 6 4.5v1H2v-1z"/></svg>
+          </span>
+          用户管理
+        </button>
+        <button class="nav-item admin-only" data-view="modelConfig">
+          <span class="nav-ico">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8 1l1.5 3 3.3.5-2.4 2.3.6 3.3L8 8.6l-3 1.5.6-3.3L3.2 4.5l3.3-.5z"/></svg>
+          </span>
+          模型配置
+        </button>
+
+        <div class="sidebar-footer">
+          <div><strong>小飞 v1.0</strong></div>
+          <div>© 跨文化传播智能体</div>
+        </div>
       </aside>
 
-      <!-- ===== Dialog View ===== -->
-      <section class="center-panel view-panel" id="viewDialog">
-        <div class="task-head card">
-          <h3>智能对话</h3>
-          <span id="chatMarketLabel">市场: AFRICA</span>
-        </div>
+      <!-- ===== Main ===== -->
+      <main class="main">
 
-        <section class="conversation card" id="chatMessages">
-          <article class="bubble ai">你好！我是文化传播智能体助手。请告诉我你希望创作什么内容，我会根据目标市场的文化特点为你提供建议。</article>
-        </section>
-
-        <div class="composer card">
-          <input id="chatInput" type="text" placeholder="输入你的文化传播目标、受众与语气要求..." />
-          <button id="chatSendBtn" class="btn btn-primary">发送</button>
-        </div>
-        <div class="feedback" id="chatFeedback"></div>
-      </section>
-
-      <!-- ===== Tasks View ===== -->
-      <section class="center-panel view-panel hidden" id="viewTasks">
-        <div class="task-head card">
-          <h3>任务管理</h3>
-          <button id="refreshJobsBtn" class="btn btn-light btn-sm">刷新</button>
-        </div>
-
-        <div class="task-list card" id="jobsList">
-          <p class="empty-hint">暂无任务，请先创建一个视频生成任务。</p>
-        </div>
-      </section>
-
-      <!-- ===== Material View ===== -->
-      <section class="center-panel view-panel hidden" id="viewMaterial">
-        <div class="task-head card">
-          <h3>文化素材库</h3>
-          <span>按市场查看文化规则与内容策略</span>
-        </div>
-
-        <div class="material-grid" id="materialGrid">
-          <p class="empty-hint">加载中...</p>
-        </div>
-      </section>
-
-      <!-- ===== Content summarize ===== -->
-      <section class="center-panel view-panel hidden" id="viewContent">
-        <div class="task-head card">
-          <h3>网页 / 文本文化总结</h3>
-          <span>抓取网页正文或粘贴内容，按目标市场生成文化适配分析</span>
-        </div>
-        <div class="create-form card">
-          <label for="sumMarket">目标市场</label>
-          <select id="sumMarket"></select>
-          <label for="sumUrl">网页 URL（可选）</label>
-          <input id="sumUrl" type="url" placeholder="https://..." />
-          <label for="sumText">或直接粘贴文本</label>
-          <textarea id="sumText" rows="8" placeholder="粘贴文章、脚本等..."></textarea>
-          <button type="button" id="sumSubmitBtn" class="btn btn-primary">生成总结</button>
-          <div class="feedback" id="sumFeedback"></div>
-          <div class="card sum-result hidden" id="sumResultWrap">
-            <h4 class="label">分析结果</h4>
-            <pre class="sum-result-pre" id="sumResult"></pre>
-          </div>
-        </div>
-      </section>
-
-      <!-- ===== Admin audit ===== -->
-      <section class="center-panel view-panel hidden" id="viewAdmin">
-        <div class="task-head card">
-          <h3>操作日志</h3>
-          <div style="display:flex;gap:8px;">
-            <button type="button" class="btn btn-light btn-sm" id="refreshAuditBtn">刷新</button>
-            <a class="btn btn-light btn-sm" id="exportAuditLink" href="#" target="_blank">导出 CSV</a>
-          </div>
-        </div>
-        <div class="card audit-table-wrap">
-          <table class="audit-table" id="auditTable">
-            <thead>
-              <tr>
-                <th>时间</th>
-                <th>用户</th>
-                <th>IP</th>
-                <th>操作</th>
-                <th>详情</th>
-              </tr>
-            </thead>
-            <tbody id="auditTbody"></tbody>
-          </table>
-          <p class="empty-hint hidden" id="auditEmpty">暂无日志</p>
-        </div>
-      </section>
-
-      <!-- ===== Create Task View ===== -->
-      <section class="center-panel view-panel hidden" id="viewCreate">
-        <div class="task-head card">
-          <h3>创建视频生成任务</h3>
-          <span>填写参数后提交，系统将自动生成文化适配的视频脚本</span>
-        </div>
-
-        <div class="create-form card">
-          <label for="createTopic">主题 Topic</label>
-          <input id="createTopic" type="text" value="fintech inclusion" placeholder="视频主题..." />
-
-          <div class="form-row">
+        <!-- ===== Dialog View ===== -->
+        <section class="view active" id="viewDialog">
+          <div class="page-head">
             <div>
-              <label for="createMarket">目标市场</label>
-              <select id="createMarket">
-                <option value="AFRICA" selected>AFRICA</option>
-              </select>
+              <h1>智能对话</h1>
+              <div class="page-sub">由 DeepSeek 驱动的跨文化策略助手 — 当前市场 <strong id="dialogMarketName">AFRICA</strong></div>
             </div>
             <div>
-              <label for="createTone">语气风格</label>
-              <input id="createTone" type="text" value="friendly" placeholder="如: friendly, formal..." />
+              <button class="btn btn-sm" id="chatClearBtn">清空会话</button>
             </div>
           </div>
 
-          <label for="createTags">受众标签（逗号分隔）</label>
-          <input id="createTags" type="text" value="18-35, mobile-first" placeholder="如: 18-35, mobile-first" />
-
-          <button id="createSubmitBtn" class="btn btn-primary">提交任务</button>
-          <div class="feedback" id="createFeedback"></div>
-        </div>
-      </section>
-
-      <!-- ===== Right Panel ===== -->
-      <aside class="right-panel">
-        <h3>概览</h3>
-        <p id="rightSub">任务统计与快捷操作</p>
-
-        <section class="card metric">
-          <p class="label">任务总数</p>
-          <p class="value" id="metricTotal">--</p>
-          <p class="hint" id="metricHint">加载中...</p>
-        </section>
-
-        <section class="card quick">
-          <p class="label">最近任务</p>
-          <div id="recentJobs">
-            <p class="empty-hint">暂无</p>
+          <div class="dialog-shell">
+            <div class="chat-stream card" id="chatStream">
+              <div class="chat-empty" id="chatEmpty">
+                <div class="e-title">开始一段跨文化对话</div>
+                <div>告诉我你想触达的市场和受众，我会带入文化规则给出内容策略。</div>
+                <div class="e-chips">
+                  <span class="e-chip" data-prompt="请帮我分析非洲青年群体的短视频偏好">非洲青年短视频偏好</span>
+                  <span class="e-chip" data-prompt="我想做一个关于移动支付的科普视频，目标市场是非洲，请给我一份脚本大纲">移动支付科普脚本大纲</span>
+                  <span class="e-chip" data-prompt="美国市场对环保议题的传播禁忌有哪些？">美国市场环保传播禁忌</span>
+                  <span class="e-chip" data-prompt="给我 3 个适合欧盟市场的女性议题切入点">欧盟女性议题切入点</span>
+                </div>
+              </div>
+            </div>
+            <div class="composer">
+              <textarea id="chatInput" placeholder="输入文化传播目标、受众、语气要求…  Enter 发送，Shift+Enter 换行"></textarea>
+              <button class="btn btn-primary" id="chatSendBtn">发送</button>
+            </div>
+            <div class="composer-hint" id="chatHint">支持基于历史的多轮对话，已自动遵循当前市场的语气偏好与禁忌词。</div>
           </div>
         </section>
 
-        <section class="card quick">
-          <p class="label">快捷操作</p>
-          <button class="quick-item" id="quickChat">开始对话咨询</button>
-          <button class="quick-item" id="quickCreate">创建新任务</button>
-          <button class="quick-item" id="quickMaterial">查看文化素材</button>
-        </section>
-      </aside>
-    </main>
-  </div>
+        <!-- ===== Create Task View ===== -->
+        <section class="view" id="viewCreate">
+          <div class="page-head">
+            <div>
+              <h1>创建视频生成任务</h1>
+              <div class="page-sub">DeepSeek 生成脚本 · 硅基流动 Wan2.2 生成视频，全程异步</div>
+            </div>
+          </div>
 
-  <!-- Task Detail Modal -->
-  <div class="modal-overlay hidden" id="taskModal">
-    <div class="modal-content card">
-      <div class="modal-header">
-        <h3>任务详情</h3>
-        <button class="modal-close" id="modalClose">&times;</button>
-      </div>
-      <div class="modal-body" id="modalBody">
-        <p>加载中...</p>
-      </div>
+          <div class="card card-pad" style="max-width: 720px;">
+            <div class="field">
+              <label for="createTopic">视频主题 Topic</label>
+              <input id="createTopic" type="text" value="fintech inclusion for rural Africa" />
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="createMarket">目标市场</label>
+                <select id="createMarket">
+                  <option value="AFRICA" selected>AFRICA</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="createTone">语气风格</label>
+                <input id="createTone" type="text" value="friendly" placeholder="friendly / formal / inspiring …" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="createTags">受众标签（逗号分隔）</label>
+              <input id="createTags" type="text" value="18-35, mobile-first, urban" />
+            </div>
+
+            <div style="display:flex; gap:10px; align-items:center; margin-top:6px;">
+              <button class="btn btn-primary" id="createSubmitBtn">提交任务</button>
+              <button class="btn btn-ghost" id="createResetBtn">重置</button>
+              <span class="feedback" id="createFeedback"></span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Tasks View ===== -->
+        <section class="view" id="viewTasks">
+          <div class="page-head">
+            <div>
+              <h1>任务管理</h1>
+              <div class="page-sub">所有视频生成任务在此追踪。运行中任务会自动刷新。</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-sm" id="refreshJobsBtn">手动刷新</button>
+            </div>
+          </div>
+          <div class="job-grid" id="jobsList">
+            <div class="empty"><svg viewBox="0 0 64 64" width="40" height="40" fill="currentColor"><path d="M8 12h48v8H8zm0 14h48v8H8zm0 14h48v8H8z"/></svg>加载中…</div>
+          </div>
+        </section>
+
+        <!-- ===== Material View ===== -->
+        <section class="view" id="viewMaterial">
+          <div class="page-head">
+            <div>
+              <h1>文化素材库</h1>
+              <div class="page-sub">每个市场的语言、推荐语气、禁忌用语 — 也是智能体生成内容时的对齐基准。</div>
+            </div>
+          </div>
+          <div class="material-grid" id="materialGrid">
+            <div class="empty">加载中…</div>
+          </div>
+        </section>
+
+        <!-- ===== Summarize View ===== -->
+        <section class="view" id="viewSummarize">
+          <div class="page-head">
+            <div>
+              <h1>内容洞察</h1>
+              <div class="page-sub">输入网页 URL 或粘贴一段正文，系统按目标市场给出文化适配分析与短视频改编建议。</div>
+            </div>
+          </div>
+          <div class="summarize-grid">
+            <div class="card card-pad">
+              <div class="tab-row">
+                <button class="tab-btn active" data-tab="url" id="tabUrl">URL 抓取</button>
+                <button class="tab-btn" data-tab="text" id="tabText">粘贴正文</button>
+              </div>
+              <div class="field" id="urlField">
+                <label for="sumUrl">公开网页 URL</label>
+                <input id="sumUrl" type="text" placeholder="https://example.com/article" />
+              </div>
+              <div class="field" id="textField" hidden>
+                <label for="sumText">正文内容</label>
+                <textarea id="sumText" placeholder="粘贴你想分析的文章 / 推文 / 文案 …"></textarea>
+              </div>
+              <div class="field">
+                <label for="sumMarket">目标市场</label>
+                <select id="sumMarket"><option value="AFRICA">AFRICA</option></select>
+              </div>
+              <button class="btn btn-primary" id="sumSubmitBtn">生成文化洞察</button>
+              <div class="feedback" id="sumFeedback" style="margin-top:8px;"></div>
+            </div>
+            <div class="summarize-output md" id="sumOutput">
+              <div class="empty-out">📊 在左侧填写后，分析结果会以 Markdown 形式呈现在这里。</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Admin: Audit ===== -->
+        <section class="view" id="viewAdmin">
+          <div class="page-head">
+            <div>
+              <h1>审计日志</h1>
+              <div class="page-sub">所有写操作和登录事件都会被记录，便于安全合规审计。</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-sm" id="auditRefreshBtn">刷新</button>
+              <button class="btn btn-sm btn-gold" id="auditExportBtn">导出 CSV</button>
+            </div>
+          </div>
+          <div class="data-card">
+            <table class="data" id="auditTable">
+              <thead>
+                <tr>
+                  <th>时间 (UTC)</th>
+                  <th>用户</th>
+                  <th>IP</th>
+                  <th>动作</th>
+                  <th>详情</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="5" class="empty">加载中…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ===== Admin: Users ===== -->
+        <section class="view" id="viewUsers">
+          <div class="page-head">
+            <div>
+              <h1>用户管理</h1>
+              <div class="page-sub">管理可登录系统的账号。</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-sm" id="usersRefreshBtn">刷新</button>
+            </div>
+          </div>
+          <div class="data-card">
+            <table class="data" id="usersTable">
+              <thead>
+                <tr>
+                  <th>用户名</th>
+                  <th>角色</th>
+                  <th>创建时间</th>
+                  <th style="text-align:right;">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="4" class="empty">加载中…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ===== Admin: Model Config ===== -->
+        <section class="view" id="viewModelConfig">
+          <div class="page-head">
+            <div>
+              <h1>模型配置</h1>
+              <div class="page-sub">调整文本模型的 API Key / Base URL / Model，保存后立即生效（无需重启服务）。</div>
+            </div>
+          </div>
+          <div class="mc-shell">
+            <div class="mc-card">
+              <h3>🔗 DeepSeek 文本模型</h3>
+              <p class="mc-help">默认使用 deepseek-v4-pro，可选 deepseek-v4-flash 等。保存后的配置会写入 <span class="mono">storage/model_config.json</span>，优先级高于 .env。</p>
+              <div class="field">
+                <label for="mcApiKey">API Key <span id="mcKeyPill" class="mc-status-pill">未设置</span></label>
+                <input id="mcApiKey" type="text" placeholder="sk-… （填入后点保存，读取时会带掩码）" autocomplete="off" />
+              </div>
+              <div class="field">
+                <label for="mcBaseUrl">Base URL（OpenAI 格式）</label>
+                <input id="mcBaseUrl" type="text" placeholder="https://api.deepseek.com" />
+              </div>
+              <div class="field">
+                <label for="mcModel">Model</label>
+                <select id="mcModel">
+                  <option value="deepseek-v4-pro">deepseek-v4-pro（推荐）</option>
+                  <option value="deepseek-v4-flash">deepseek-v4-flash（低价，适合高频调用）</option>
+                  <option value="deepseek-chat">deepseek-chat（旧版塔顶型号）</option>
+                  <option value="deepseek-reasoner">deepseek-reasoner（思考模式）</option>
+                  <option value="__custom">… 自定义</option>
+                </select>
+                <input id="mcModelCustom" type="text" placeholder="自定义模型名" hidden style="margin-top:6px;" />
+              </div>
+              <div style="display:flex; gap:8px; margin-top:6px;">
+                <button class="btn btn-primary" id="mcSaveBtn">保存配置</button>
+                <button class="btn btn-gold" id="mcTestBtn">测试连接</button>
+                <button class="btn btn-ghost" id="mcReloadBtn">重新加载</button>
+              </div>
+              <div class="feedback" id="mcFeedback" style="margin-top:8px;"></div>
+            </div>
+            <div class="mc-card">
+              <h3>🎬 视频模型（托管）</h3>
+              <p class="mc-help">视频生成仍由硬货服务提供，取自 .env，在此仅展示以供运维计算资源使用。</p>
+              <div class="mc-kv">
+                <span class="k">Provider</span><span>SiliconFlow</span>
+                <span class="k">Model</span><span class="mono" id="mcWanModel">—</span>
+                <span class="k">Task Type</span><span class="mono" id="mcWanTask">—</span>
+                <span class="k">Image Size</span><span class="mono" id="mcWanSize">—</span>
+              </div>
+              <h3 style="margin-top:18px;">📡 连接测试返回</h3>
+              <p class="mc-help">点击左侧「测试连接」后，调用该 Key 请求一次 DeepSeek，返回原始响应、模型名、token 消耗，以诊断 API 是否可用。</p>
+              <div class="mc-test-out" id="mcTestOut">尚未测试</div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+      <!-- ===== Right Rail ===== -->
+      <aside class="rail">
+        <h3>实时概览</h3>
+        <div class="card">
+          <div class="metric-grid">
+            <div class="metric-cell">
+              <div class="m-label">总任务</div>
+              <div class="m-value" id="metricTotal">--</div>
+            </div>
+            <div class="metric-cell success">
+              <div class="m-label">已完成</div>
+              <div class="m-value" id="metricSuccess">--</div>
+            </div>
+            <div class="metric-cell warn">
+              <div class="m-label">运行中</div>
+              <div class="m-value" id="metricRunning">--</div>
+            </div>
+            <div class="metric-cell error">
+              <div class="m-label">失败</div>
+              <div class="m-value" id="metricFailed">--</div>
+            </div>
+          </div>
+        </div>
+
+        <h3>市场分布</h3>
+        <div class="card">
+          <div class="market-bars" id="marketBars">
+            <div class="empty" style="padding:14px;">暂无数据</div>
+          </div>
+        </div>
+
+        <h3>最近任务</h3>
+        <div class="card">
+          <div class="recent-list" id="recentList">
+            <div class="empty" style="padding:14px;">暂无</div>
+          </div>
+        </div>
+      </aside>
     </div>
   </div>
 
-  <script src="/app/script.js"></script>
+  <!-- ===== Modal ===== -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="modalTitle">详情</h3>
+        <button class="modal-close" id="modalClose" type="button">×</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <script src="script.js"></script>
 </body>
 </html>

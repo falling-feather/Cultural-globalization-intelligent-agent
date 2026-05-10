@@ -3,6 +3,7 @@ import json
 import httpx
 
 from src.core.settings import settings
+from src.services.runtime_config import runtime_config
 
 
 class ProviderError(Exception):
@@ -22,10 +23,10 @@ def _extract_nested(data: dict, keys: list[str]) -> str | None:
 
 
 def generate_script_with_deepseek(topic: str, market: str, tone: str, audience_tags: list[str], market_rules: dict) -> str:
-    if not settings.deepseek_api_key:
+    if not runtime_config.deepseek_api_key:
         raise ProviderError("DEEPSEEK_API_KEY is missing")
 
-    url = settings.deepseek_base_url.rstrip("/") + "/chat/completions"
+    url = runtime_config.deepseek_base_url.rstrip("/") + "/chat/completions"
     tone_prefs = ", ".join(market_rules.get("tone_preferences", ["clear"]))
     taboo_terms = ", ".join(market_rules.get("taboo_terms", [])) or "N/A"
     tags = ", ".join(audience_tags) or "general audience"
@@ -41,7 +42,7 @@ def generate_script_with_deepseek(topic: str, market: str, tone: str, audience_t
     )
 
     payload = {
-        "model": settings.deepseek_model,
+        "model": runtime_config.deepseek_model,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
@@ -50,7 +51,7 @@ def generate_script_with_deepseek(topic: str, market: str, tone: str, audience_t
     }
 
     headers = {
-        "Authorization": f"Bearer {settings.deepseek_api_key}",
+        "Authorization": f"Bearer {runtime_config.deepseek_api_key}",
         "Content-Type": "application/json",
     }
 
@@ -149,7 +150,7 @@ def query_video_with_siliconflow(task_id: str) -> dict:
 
 def summarize_content_for_market(text: str, market: str, market_rules: dict) -> str:
     """Analyze pasted or fetched text for cross-cultural communication / video adaptation."""
-    if not settings.deepseek_api_key:
+    if not runtime_config.deepseek_api_key:
         raise ProviderError("DEEPSEEK_API_KEY is missing")
 
     tone_prefs = ", ".join(market_rules.get("tone_preferences", ["clear"]))
@@ -174,9 +175,9 @@ def summarize_content_for_market(text: str, market: str, market_rules: dict) -> 
         f"{text}"
     )
 
-    url = settings.deepseek_base_url.rstrip("/") + "/chat/completions"
+    url = runtime_config.deepseek_base_url.rstrip("/") + "/chat/completions"
     payload = {
-        "model": settings.deepseek_model,
+        "model": runtime_config.deepseek_model,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
@@ -184,7 +185,7 @@ def summarize_content_for_market(text: str, market: str, market_rules: dict) -> 
         "temperature": 0.5,
     }
     headers = {
-        "Authorization": f"Bearer {settings.deepseek_api_key}",
+        "Authorization": f"Bearer {runtime_config.deepseek_api_key}",
         "Content-Type": "application/json",
     }
 

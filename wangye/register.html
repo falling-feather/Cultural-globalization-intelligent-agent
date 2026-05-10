@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>登录 · 小飞 · 跨文化传播智能体</title>
+  <title>注册 · 小飞 · 跨文化传播智能体</title>
   <link rel="stylesheet" href="/app/styles.css" />
   <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230f2236'/><path d='M6 17 L26 7 L19 26 L16 18 Z' fill='%23c98a2b'/></svg>" />
 </head>
@@ -19,25 +19,29 @@
           <div class="brand-sub" style="border:0;padding:0;margin:0;">跨文化传播智能体</div>
         </div>
       </div>
-      <h1 class="auth-title">欢迎回来</h1>
-      <p class="auth-sub">面向海外市场的 AI 视频内容创作平台 · 请登录以继续</p>
+      <h1 class="auth-title">注册新账号</h1>
+      <p class="auth-sub">用户名 3-32 位（字母 / 数字 / - / _），密码至少 6 位</p>
     </div>
 
     <div class="auth-body">
       <div class="field">
         <label for="username">用户名</label>
-        <input id="username" type="text" autocomplete="username" placeholder="请输入用户名" />
+        <input id="username" type="text" autocomplete="username" placeholder="例如：creator01" />
       </div>
       <div class="field">
         <label for="password">密码</label>
-        <input id="password" type="password" autocomplete="current-password" placeholder="请输入密码" />
+        <input id="password" type="password" autocomplete="new-password" placeholder="至少 6 位" />
       </div>
-      <button class="btn btn-primary" id="loginBtn" style="width:100%;padding:11px;">登录</button>
-      <div class="feedback error" id="loginFeedback" style="margin-top:10px;"></div>
+      <div class="field">
+        <label for="password2">确认密码</label>
+        <input id="password2" type="password" autocomplete="new-password" placeholder="再次输入密码" />
+      </div>
+      <button class="btn btn-primary" id="registerBtn" style="width:100%;padding:11px;">注册并登录</button>
+      <div class="feedback error" id="registerFeedback" style="margin-top:10px;"></div>
     </div>
 
     <div class="auth-switch">
-      还没有账号？<a href="/app/register.html">注册新用户</a>
+      已有账号？<a href="/app/login.html">返回登录</a>
     </div>
   </div>
 
@@ -46,34 +50,35 @@
     const ME_KEY = "agent_culture_me";
     if (localStorage.getItem(TOKEN_KEY)) window.location.href = "/app/";
 
-    async function doLogin() {
+    async function doRegister() {
       const u = document.getElementById("username").value.trim();
       const p = document.getElementById("password").value;
-      const fb = document.getElementById("loginFeedback");
-      const btn = document.getElementById("loginBtn");
+      const p2 = document.getElementById("password2").value;
+      const fb = document.getElementById("registerFeedback");
+      const btn = document.getElementById("registerBtn");
       fb.textContent = "";
       if (!u || !p) { fb.textContent = "请输入用户名和密码"; return; }
-      btn.disabled = true; btn.textContent = "登录中…";
+      if (p !== p2) { fb.textContent = "两次输入的密码不一致"; return; }
+      btn.disabled = true; btn.textContent = "注册中…";
       try {
-        const res = await fetch("/api/v1/auth/login", {
+        const res = await fetch("/api/v1/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ username: u, password: p }),
         });
         const data = await res.json();
-        if (!res.ok) { fb.textContent = data.detail || "登录失败"; return; }
+        if (!res.ok) { fb.textContent = data.detail || "注册失败"; return; }
         localStorage.setItem(TOKEN_KEY, data.access_token);
         localStorage.setItem(ME_KEY, JSON.stringify({ username: data.username, role: data.role }));
         window.location.href = "/app/";
       } catch (e) {
         fb.textContent = "网络异常：" + (e.message || e);
       } finally {
-        btn.disabled = false; btn.textContent = "登录";
+        btn.disabled = false; btn.textContent = "注册并登录";
       }
     }
-    document.getElementById("loginBtn").addEventListener("click", doLogin);
-    document.getElementById("password").addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
-    document.getElementById("username").addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
+    document.getElementById("registerBtn").addEventListener("click", doRegister);
+    document.getElementById("password2").addEventListener("keydown", (e) => { if (e.key === "Enter") doRegister(); });
   </script>
 </body>
 </html>

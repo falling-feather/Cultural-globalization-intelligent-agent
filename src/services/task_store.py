@@ -144,6 +144,28 @@ class TaskStore:
                 row = conn.execute("SELECT COUNT(*) as cnt FROM jobs").fetchone()
         return row["cnt"] if row else 0
 
+    def stats(self) -> dict:
+        with self._lock:
+            with self._connect() as conn:
+                rows = conn.execute(
+                    "SELECT status, COUNT(*) as c FROM jobs GROUP BY status"
+                ).fetchall()
+                market_rows = conn.execute(
+                    "SELECT json_extract(request_json,'$.market') AS market, COUNT(*) AS c "
+                    "FROM jobs GROUP BY market ORDER BY c DESC LIMIT 8"
+                ).fetchall()
+                total_row = conn.execute("SELECT COUNT(*) AS c FROM jobs").fetchone()
+        by_status = {r["status"]: int(r["c"]) for r in rows}
+        by_market = [
+            {"market": (r["market"] or "UNKNOWN"), "count": int(r["c"])}
+            for r in market_rows
+        ]
+        return {
+            "total": int(total_row["c"]) if total_row else 0,
+            "by_status": by_status,
+            "by_market": by_market,
+        }
+
     def set_error(self, job_id: str, error: str) -> None:
         now = datetime.utcnow().isoformat()
         with self._lock:

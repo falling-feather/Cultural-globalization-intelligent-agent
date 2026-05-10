@@ -77,6 +77,61 @@ class AuthStore:
                 )
                 conn.commit()
 
+    def create_user(self, *, username: str, password: str, role: str = "user") -> UserRecord:
+        username = username.strip()
+        if not username:
+            raise ValueError("username is required")
+        if len(username) < 3 or len(username) > 32:
+            raise ValueError("username length must be 3-32 characters")
+        if not username.replace("_", "").replace("-", "").isalnum():
+            raise ValueError("username may only contain letters, digits, '-' or '_'")
+        if not password or len(password) < 6:
+            raise ValueError("password must be at least 6 characters")
+        if role not in ("user", "admin"):
+            raise ValueError("invalid role")
+        now = datetime.utcnow().isoformat()
+        with self._lock:
+            with self._connect() as conn:
+                exists = conn.execute(
+                    "SELECT 1 FROM users WHERE username = ?", (username,)
+                ).fetchone()
+                if exists:
+                    raise ValueError("username already exists")
+                cur = conn.execute(
+                    """
+                    INSERT INTO users (username, password_hash, role, created_at)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    (username, hash_password(password), role, now),
+                )
+                conn.commit()
+                new_id = cur.lastrowid or 0
+        return UserRecord(id=new_id, username=username, password_hash="", role=role)
+
+    def list_users(self) -> list[dict]:
+        with self._lock:
+            with self._connect() as conn:
+                rows = conn.execute(
+                    "SELECT id, username, role, created_at FROM users ORDER BY id ASC"
+                ).fetchall()
+        return [
+            {"id": r["id"], "username": r["username"], "role": r["role"], "created_at": r["created_at"]}
+            for r in rows
+        ]
+
+    def delete_user(self, username: str) -> bool:
+        with self._lock:
+            with self._connect() as conn:
+                cur = conn.execute("DELETE FROM users WHERE username = ?", (username,))
+                conn.commit()
+                return cur.rowcount > 0
+
+    def count_users(self) -> int:
+        with self._lock:
+            with self._connect() as conn:
+                row = conn.execute("SELECT COUNT(*) AS c FROM users").fetchone()
+        return int(row["c"]) if row else 0
+
     def get_user_by_username(self, username: str) -> UserRecord | None:
         with self._lock:
             with self._connect() as conn:
