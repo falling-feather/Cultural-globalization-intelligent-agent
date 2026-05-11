@@ -200,3 +200,101 @@ def summarize_content_for_market(text: str, market: str, market_rules: dict) -> 
         return data["choices"][0]["message"]["content"].strip()
     except Exception as exc:
         raise ProviderError(f"DeepSeek response parse failed: {exc}") from exc
+
+
+def extract_structured_material(
+    *,
+    summary_md: str,
+    raw_text: str,
+    market: str,
+    market_rules: dict,
+    source_url: str = "",
+) -> dict:
+    """Step-2 of insight pipeline: turn the markdown report into a normalized
+    structured material record (title / tone_observed / risks / taboo_hits / tags / key_quotes).
+    """
+    if not runtime_config.deepseek_api_key:
+        raise ProviderError("DEEPSEEK_API_KEY is missing")
+
+    taboo_terms = market_rules.get("taboo_terms", []) or []
+    tone_prefs = market_rules.get("tone_preferences", []) or []
+    schema_hint = (
+        "{\n"
+        "  \"title\": \"短标题，<=30字，反映素材主题\",\n"
+        "  \"tone_observed\": [\"原文呈现出来的语气\"],\n"
+        "  \"risks\": [\"对目标市场的传播风险点\"],\n"
+        "  \"taboo_hits\": [\"原文中触及/接近 taboo 的词或表达\"],\n"
+        "  \"tags\": [\"3-6个领域/题材标签\"],\n"
+        "  \"key_quotes\": [\"2-4 句最具代表性的原文摘录，<=80字/句\"]\n"
+        "}"
+    )
+    system_prompt = (
+        "You convert a cross-cultural analysis report into a strict JSON object. "
+        "Return ONLY a JSON object, no prose, no code fence. All string lists must be unique and concise."
+    )
+    user_prompt = (
+        f"Target market: {market}. Market preferred tones: {', '.join(tone_prefs) or 'N/A'}. "
+        f"Market taboo list: {', '.join(taboo_terms) or 'N/A'}. Source url: {source_url or 'N/A'}.\n\n"
+        "Markdown analysis:\n"
+        f"{summary_md[:4000]}\n\n"
+        "Raw text excerpt (truncated):\n"
+        f"{raw_text[:4000]}\n\n"
+        f"Output strictly this JSON shape (Chinese values are fine):\n{schema_hint}"
+    )
+
+    url = runtime_config.deepseek_base_url.rstrip("/") + "/chat/completions"
+    payload = {
+        "model": runtime_config.deepseek_model,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        "temperature": 0.2,
+        "response_format": {"type": "json_object"},
+    }
+    headers = {
+        "Authorization": f"Bearer {runtime_config.deepseek_api_key}",
+        "Content-Type": "application/json",
+    }
+    with httpx.Client(timeout=120) as client:
+        response = client.post(url, headers=headers, content=json.dumps(payload))
+    if response.status_code >= 400:
+        raise ProviderError(
+            f"DeepSeek extract error: {response.status_code} {response.text[:200]}"
+        )
+    try:
+        content = response.json()["choices"][0]["message"]["content"].strip()
+    except Exception as exc:  # noqa: BLE001
+        raise ProviderError(f"DeepSeek extract parse failed: {exc}") from exc
+    if content.startswith("```"):
+        content = content.strip("`").lstrip("json").strip()
+    try:
+        result = json.loads(content)
+    except Exception as exc:  # noqa: BLE001
+        raise ProviderError(f"DeepSeek extract returned non-JSON: {exc}") from exc
+
+    def _str_list(v: object, max_items: int = 8, max_len: int = 200) -> list[str]:
+        if isinstance(v, list):
+            out: list[str] = []
+            seen: set[str] = set()
+            for item in v:
+                s = str(item).strip()[:max_len]
+                if s and s not in seen:
+                    out.append(s)
+                    seen.add(s)
+                if len(out) >= max_items:
+                    break
+            return out
+        if isinstance(v, str):
+            return [v.strip()[:max_len]] if v.strip() else []
+        return []
+
+    title = str(result.get("title") or "").strip() or "未命名素材"
+    return {
+        "title": title[:80],
+        "tone_observed": _str_list(result.get("tone_observed"), 6, 60),
+        "risks": _str_list(result.get("risks"), 8, 200),
+        "taboo_hits": _str_list(result.get("taboo_hits"), 8, 80),
+        "tags": _str_list(result.get("tags"), 8, 40),
+        "key_quotes": _str_list(result.get("key_quotes"), 5, 200),
+    }

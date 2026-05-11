@@ -194,6 +194,7 @@ async function boot() {
   bindUsers();
   bindModelConfig();
   bindModal();
+  bindMaterial();
 
   await Promise.all([checkHealth(), loadMarkets()]);
   loadStats();
@@ -305,6 +306,10 @@ function bindChat() {
       sendChat();
     })
   );
+  const g = $("chatInsertCultureBtn"); if (g) g.addEventListener("click", () => insertCultureToChat("guide"));
+  const t = $("chatInsertTabooBtn");   if (t) t.addEventListener("click", () => insertCultureToChat("taboo"));
+  const o = $("chatInsertToneBtn");    if (o) o.addEventListener("click", () => insertCultureToChat("tone"));
+  const r = $("chatRefMaterialBtn");   if (r) r.addEventListener("click", openMaterialPicker);
 }
 function chatStorageKey() { return `${HISTORY_KEY}:${currentMarket}`; }
 function loadChatHistory() {
@@ -376,6 +381,7 @@ async function sendChat() {
       message: text,
       market: currentMarket,
       history: chatHistory.slice(0, -1).slice(-20),
+      material_ids: _chatRefMaterials.map((x) => x.id),
     });
     chatHistory.push({ role: "assistant", content: data.reply });
     saveChatHistory();
@@ -390,6 +396,163 @@ async function sendChat() {
   }
 }
 
+// ===== 引用素材 =====
+let _chatRefMaterials = []; // [{id, title, market}]
+
+function _renderRefChips() {
+  const wrap = $("chatRefChips");
+  if (!wrap) return;
+  if (!_chatRefMaterials.length) { wrap.hidden = true; wrap.innerHTML = ""; return; }
+  wrap.hidden = false;
+  wrap.innerHTML = _chatRefMaterials.map((m) =>
+    `<span class="ref-chip" data-rid="${escapeHtml(m.id)}">📚 ${escapeHtml(m.title)} · ${escapeHtml(m.market)}<span class="x" data-x="${escapeHtml(m.id)}">✕</span></span>`
+  ).join("");
+  wrap.querySelectorAll("[data-x]").forEach((x) => x.addEventListener("click", () => {
+    _chatRefMaterials = _chatRefMaterials.filter((m) => m.id !== x.dataset.x);
+    _renderRefChips();
+  }));
+}
+
+async function openMaterialPicker() {
+  openModal("引用素材到对话", `<div class="empty">加载中…</div>`);
+  try {
+    const data = await apiGet("/api/v1/materials?limit=200");
+    let items = data.items || [];
+    // 默认按当前市场过滤；提供切换全部
+    const renderBody = (filterAll) => {
+      const filtered = filterAll ? items : items.filter((it) => it.market === (currentMarket || "").toUpperCase());
+      const checked = new Set(_chatRefMaterials.map((m) => m.id));
+      const list = filtered.length ? `
+        <div class="picker-list">
+          ${filtered.map((it) => `
+            <label class="picker-item ${checked.has(it.id) ? "checked" : ""}" data-pid="${escapeHtml(it.id)}">
+              <input type="checkbox" ${checked.has(it.id) ? "checked" : ""} data-cb="${escapeHtml(it.id)}" />
+              <div style="flex:1;">
+                <div class="pi-title">${escapeHtml(it.title)}</div>
+                <div class="pi-meta">${escapeHtml(it.market)} · ${escapeHtml((it.created_at || "").slice(0, 10))} · ${escapeHtml((it.structured && (it.structured.tags || []).slice(0, 3).join("、")) || "")}</div>
+              </div>
+            </label>`).join("")}
+        </div>` : `<div class="empty">该市场下没有保存过素材，先去「内容洞察」分析并入库。</div>`;
+      $("modalBody").innerHTML = `
+        <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+          <label><input type="checkbox" id="pkAllMarkets" ${filterAll ? "checked" : ""} /> 显示所有市场（默认仅 ${escapeHtml(currentMarket)}）</label>
+          <span style="flex:1;"></span>
+          <span style="color:var(--c-muted); font-size:12px;">最多引用 10 条</span>
+        </div>
+        ${list}
+        <div style="display:flex; gap:10px; margin-top:14px; justify-content:flex-end;">
+          <button class="btn btn-ghost" id="pkCancelBtn">取消</button>
+          <button class="btn btn-primary" id="pkConfirmBtn">确定引用</button>
+        </div>`;
+      $("pkAllMarkets").addEventListener("change", (e) => renderBody(e.target.checked));
+      $("pkCancelBtn").addEventListener("click", closeModal);
+      $("pkConfirmBtn").addEventListener("click", () => {
+        const picks = [];
+        $$("[data-cb]", $("modalBody")).forEach((cb) => {
+          if (cb.checked) {
+            const it = items.find((x) => x.id === cb.dataset.cb);
+            if (it) picks.push({ id: it.id, title: it.title, market: it.market });
+          }
+        });
+        if (picks.length > 10) { toast("最多引用 10 条", "error"); return; }
+        _chatRefMaterials = picks;
+        _renderRefChips();
+        toast(`已引用 ${picks.length} 条素材`, "success");
+        closeModal();
+      });
+    };
+    renderBody(false);
+  } catch (e) {
+    $("modalBody").innerHTML = `<div class="empty" style="color:var(--c-error);">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+// ===== Culture quick-apply (快捷调用文化素材) =====
+const _cultureCache = {};
+async function getCultureRules(marketUpper) {
+  const key = (marketUpper || "").toUpperCase();
+  if (_cultureCache[key]) return _cultureCache[key];
+  const m = (allMarkets || []).find((x) => (x.id || x.label || "").toUpperCase() === key);
+  const apiId = m ? m.id : key.toLowerCase();
+  const r = await apiGet(`/api/v1/culture/${encodeURIComponent(apiId)}`);
+  _cultureCache[key] = r;
+  return r;
+}
+function _summarizeRules(r) {
+  const tones = (r.tone_preferences || []).join("、") || "无明确偏好";
+  const taboos = (r.taboo_terms || []).join("、") || "无";
+  return { tones, taboos, lang: r.language || "en" };
+}
+
+async function applyCultureToCreate() {
+  const fb = $("createCultureHint");
+  const wrap = $("createCultureQuick");
+  try {
+    const market = $("createMarket").value || currentMarket;
+    const r = await getCultureRules(market);
+    const s = _summarizeRules(r);
+    const firstTone = (r.tone_preferences || [])[0];
+    if (firstTone) $("createTone").value = firstTone;
+    const tagsEl = $("createTags");
+    const cur = tagsEl.value.split(",").map((t) => t.trim()).filter(Boolean);
+    const langTag = `lang:${s.lang}`;
+    const avoidTag = (r.taboo_terms || []).length ? `avoid:${(r.taboo_terms || []).slice(0, 2).join("|")}` : "";
+    if (!cur.includes(langTag)) cur.push(langTag);
+    if (avoidTag && !cur.some((t) => t.startsWith("avoid:"))) cur.push(avoidTag);
+    tagsEl.value = cur.join(", ");
+    wrap.classList.add("applied");
+    fb.textContent = `已套用 ${market}：语气=${s.tones} · 禁忌=${s.taboos}`;
+    toast("已套用市场文化风格", "success");
+  } catch (e) {
+    toast("加载文化规则失败：" + e.message, "error");
+  }
+}
+
+async function insertCultureToChat(kind) {
+  try {
+    const r = await getCultureRules(currentMarket);
+    const s = _summarizeRules(r);
+    let snippet = "";
+    if (kind === "guide") {
+      snippet = `请严格遵循 ${currentMarket} 市场的文化指南（语言=${s.lang}，推荐语气=${s.tones}，需避开=${s.taboos}）。\n`;
+    } else if (kind === "taboo") {
+      snippet = `请重点告诉我 ${currentMarket} 市场上需避开的表达与示例。已知禁忌词：${s.taboos}。`;
+    } else if (kind === "tone") {
+      snippet = `接下来的回复请采用 ${currentMarket} 市场推荐语气：${s.tones}。`;
+    }
+    const ta = $("chatInput");
+    const cur = ta.value.trim();
+    ta.value = cur ? `${snippet}\n${cur}` : snippet;
+    ta.focus();
+    toast("已插入文化提示", "success");
+  } catch (e) {
+    toast("加载文化规则失败：" + e.message, "error");
+  }
+}
+
+async function applyCultureToSummarize() {
+  try {
+    const market = $("sumMarket").value || currentMarket;
+    const r = await getCultureRules(market);
+    const s = _summarizeRules(r);
+    const prefix = `[市场指南 · ${market}] 语言=${s.lang}；推荐语气=${s.tones}；需避开=${s.taboos}。\n\n`;
+    const tab = $("sumSubmitBtn").dataset.tab || "url";
+    if (tab === "text") {
+      const el = $("sumText");
+      el.value = prefix + (el.value || "");
+      el.focus();
+      toast("已在正文前追加市场指南", "success");
+    } else {
+      setSumTab("text");
+      $("sumText").value = prefix;
+      $("sumText").focus();
+      toast("已切到「粘贴正文」并填入市场指南", "success");
+    }
+  } catch (e) {
+    toast("加载文化规则失败：" + e.message, "error");
+  }
+}
+
 // ===== Create job =====
 function bindCreate() {
   $("createSubmitBtn").addEventListener("click", submitCreate);
@@ -397,8 +560,11 @@ function bindCreate() {
     $("createTopic").value = "";
     $("createTone").value = "neutral";
     $("createTags").value = "";
+    const wrap = $("createCultureQuick"); if (wrap) wrap.classList.remove("applied");
     setCreateFb("", "");
   });
+  const ac = $("createApplyCultureBtn");
+  if (ac) ac.addEventListener("click", applyCultureToCreate);
 }
 function setCreateFb(text, type = "") {
   const fb = $("createFeedback");
@@ -562,33 +728,172 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ===== Material =====
-async function loadMaterial() {
+let _materialCache = { systems: [], mine: [] };
+let _matFilterMarket = "";
+let _matSearch = "";
+
+function bindMaterial() {
+  const refresh = $("matRefreshBtn");
+  if (refresh) refresh.addEventListener("click", () => loadMaterial(true));
+  const sel = $("matMarketFilter");
+  if (sel) sel.addEventListener("change", () => { _matFilterMarket = sel.value || ""; renderMaterial(); });
+  const s = $("matSearch");
+  if (s) s.addEventListener("input", () => { _matSearch = s.value.trim().toLowerCase(); renderMaterial(); });
+}
+
+async function loadMaterial(force = false) {
   const grid = $("materialGrid");
   grid.innerHTML = `<div class="empty">加载中…</div>`;
   try {
     const markets = allMarkets.length ? allMarkets : await apiGet("/api/v1/culture");
     const detailed = await Promise.all(markets.map(async (m) => ({ m, rules: await apiGet(`/api/v1/culture/${m.id}`) })));
-    grid.innerHTML = detailed.map(({ m, rules }) => {
-      const tones = (rules.tone_preferences || []).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join("");
-      const taboos = (rules.taboo_terms || []).length
-        ? rules.taboo_terms.map((t) => `<span class="tag taboo">${escapeHtml(t)}</span>`).join("")
-        : `<span style="color:var(--c-muted);font-size:12px;">无</span>`;
-      return `<div class="mat-card">
-        <div class="mc-head"><h4>${escapeHtml(m.label)}</h4><span class="mc-lang">${escapeHtml(rules.language || "en")}</span></div>
-        <div class="mat-section"><div class="ms-title">推荐语气</div><div>${tones || "-"}</div></div>
-        <div class="mat-section"><div class="ms-title">禁忌 / 风险词</div><div>${taboos}</div></div>
-      </div>`;
-    }).join("");
+    _materialCache.systems = detailed.map(({ m, rules }) => ({
+      _kind: "system",
+      id: "sys:" + m.id,
+      market: (m.id || "").toUpperCase(),
+      title: m.label,
+      rules,
+    }));
+    const data = await apiGet("/api/v1/materials?limit=200");
+    _materialCache.mine = (data.items || []).map((it) => ({ _kind: "mine", ...it }));
+    // 填充 market filter
+    const sel = $("matMarketFilter");
+    if (sel && sel.options.length <= 1) {
+      const seen = new Set();
+      [..._materialCache.systems, ..._materialCache.mine].forEach((x) => seen.add(x.market));
+      [...seen].sort().forEach((mk) => {
+        const opt = document.createElement("option"); opt.value = mk; opt.textContent = mk;
+        sel.appendChild(opt);
+      });
+    }
+    renderMaterial();
   } catch (e) {
     grid.innerHTML = `<div class="empty">加载失败：${escapeHtml(e.message)}</div>`;
   }
 }
 
+function renderMaterial() {
+  const grid = $("materialGrid");
+  const all = [..._materialCache.systems, ..._materialCache.mine];
+  const filtered = all.filter((it) => {
+    if (_matFilterMarket && it.market !== _matFilterMarket) return false;
+    if (_matSearch) {
+      const hay = (
+        (it.title || "") + " " +
+        (it.market || "") + " " +
+        ((it.structured && (it.structured.tags || []).join(" ")) || "") + " " +
+        ((it.structured && (it.structured.tags || [])).join(" ") || "")
+      ).toLowerCase();
+      if (!hay.includes(_matSearch)) return false;
+    }
+    return true;
+  });
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="empty">没有匹配的素材</div>`;
+    return;
+  }
+  grid.innerHTML = filtered.map((it) => {
+    if (it._kind === "system") {
+      const tones = (it.rules.tone_preferences || []).slice(0, 3).join("、") || "无";
+      const taboos = (it.rules.taboo_terms || []).slice(0, 3).join("、") || "无";
+      return `<div class="mat-row" data-sys="${escapeHtml(it.market)}">
+        <span class="mr-badge system">系统</span>
+        <div>
+          <div class="mr-title">${escapeHtml(it.title)} · ${escapeHtml(it.market)}</div>
+          <div class="mr-meta">
+            <span>语言 ${escapeHtml(it.rules.language || "en")}</span>
+            <span>语气：${escapeHtml(tones)}</span>
+            <span>禁忌：${escapeHtml(taboos)}</span>
+          </div>
+        </div>
+        <div class="mr-actions"><button class="btn btn-sm" data-sys-detail="${escapeHtml(it.market)}">查看</button></div>
+      </div>`;
+    } else {
+      const tags = ((it.structured && it.structured.tags) || []).slice(0, 4).join("、") || "—";
+      return `<div class="mat-row" data-mine="${escapeHtml(it.id)}">
+        <span class="mr-badge mine">我的</span>
+        <div>
+          <div class="mr-title">${escapeHtml(it.title)} · ${escapeHtml(it.market)}</div>
+          <div class="mr-meta">
+            <span>${escapeHtml(it.source_type === "url" ? (it.source_url || "URL") : "正文")}</span>
+            <span>标签：${escapeHtml(tags)}</span>
+            <span>${escapeHtml((it.created_at || "").replace("T", " ").slice(0, 16))}</span>
+          </div>
+        </div>
+        <div class="mr-actions">
+          <button class="btn btn-sm" data-mine-detail="${escapeHtml(it.id)}">查看</button>
+          <button class="btn btn-sm" data-mine-del="${escapeHtml(it.id)}" style="color:var(--c-error);">删除</button>
+        </div>
+      </div>`;
+    }
+  }).join("");
+  grid.querySelectorAll("[data-sys-detail]").forEach((b) =>
+    b.addEventListener("click", () => showSystemMaterial(b.dataset.sysDetail))
+  );
+  grid.querySelectorAll("[data-mine-detail]").forEach((b) =>
+    b.addEventListener("click", () => showMyMaterial(b.dataset.mineDetail))
+  );
+  grid.querySelectorAll("[data-mine-del]").forEach((b) =>
+    b.addEventListener("click", () => deleteMyMaterial(b.dataset.mineDel))
+  );
+}
+
+function showSystemMaterial(market) {
+  const it = _materialCache.systems.find((x) => x.market === market);
+  if (!it) return;
+  const tones = (it.rules.tone_preferences || []).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join(" ") || "—";
+  const taboos = (it.rules.taboo_terms || []).map((t) => `<span class="tag taboo">${escapeHtml(t)}</span>`).join(" ") || "—";
+  openModal(`系统市场 · ${it.title}`, `
+    <div class="detail-row"><div class="d-key">市场代码</div><div class="d-val mono">${escapeHtml(it.market)}</div></div>
+    <div class="detail-row"><div class="d-key">语言</div><div class="d-val">${escapeHtml(it.rules.language || "en")}</div></div>
+    <div class="detail-row"><div class="d-key">推荐语气</div><div class="d-val">${tones}</div></div>
+    <div class="detail-row"><div class="d-key">禁忌词</div><div class="d-val">${taboos}</div></div>
+  `);
+}
+
+async function showMyMaterial(id) {
+  openModal("素材详情", `<div class="empty">加载中…</div>`);
+  try {
+    const it = await apiGet(`/api/v1/materials/${encodeURIComponent(id)}`);
+    const s = it.structured || {};
+    const list = (arr) => (arr && arr.length) ? `<ul style="margin:6px 0 0 16px;">${arr.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul>` : "—";
+    $("modalBody").innerHTML = `
+      <div class="detail-row"><div class="d-key">标题</div><div class="d-val">${escapeHtml(it.title)}</div></div>
+      <div class="detail-row"><div class="d-key">市场</div><div class="d-val">${escapeHtml(it.market)}</div></div>
+      <div class="detail-row"><div class="d-key">来源</div><div class="d-val mono" style="word-break:break-all;">${escapeHtml(it.source_url || it.source_type)}</div></div>
+      <div class="detail-row"><div class="d-key">创建时间</div><div class="d-val">${escapeHtml((it.created_at || "").replace("T", " "))}</div></div>
+      <div class="detail-row"><div class="d-key">语气观察</div><div class="d-val">${list(s.tone_observed)}</div></div>
+      <div class="detail-row"><div class="d-key">风险</div><div class="d-val">${list(s.risks)}</div></div>
+      <div class="detail-row"><div class="d-key">触及禁忌</div><div class="d-val">${list(s.taboo_hits)}</div></div>
+      <div class="detail-row"><div class="d-key">标签</div><div class="d-val">${(s.tags || []).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join(" ") || "—"}</div></div>
+      <div class="detail-row"><div class="d-key">关键引用</div><div class="d-val">${list(s.key_quotes)}</div></div>
+      <div class="detail-row"><div class="d-key">报告</div><div class="d-val">${renderMarkdown(it.summary_md || "(空)")}</div></div>
+    `;
+  } catch (e) {
+    $("modalBody").innerHTML = `<div class="empty" style="color:var(--c-error);">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function deleteMyMaterial(id) {
+  if (!confirm("确认删除这条素材？")) return;
+  try {
+    await apiDel(`/api/v1/materials/${encodeURIComponent(id)}`);
+    toast("已删除", "success");
+    loadMaterial(true);
+  } catch (e) { toast("删除失败：" + e.message, "error"); }
+}
+
 // ===== Summarize =====
+let _lastSummarize = null; // {market, source_url, source_type, raw_excerpt, summary, structured}
+
 function bindSummarize() {
   $("tabUrl").addEventListener("click", () => setSumTab("url"));
   $("tabText").addEventListener("click", () => setSumTab("text"));
   $("sumSubmitBtn").addEventListener("click", submitSummarize);
+  const ac = $("sumApplyCultureBtn");
+  if (ac) ac.addEventListener("click", applyCultureToSummarize);
+  const sb = $("sumSaveBtn"); if (sb) sb.addEventListener("click", saveSummarizeToLibrary);
+  const cb = $("sumSaveCancelBtn"); if (cb) cb.addEventListener("click", () => { $("sumSavePanel").hidden = true; });
 }
 function setSumTab(tab) {
   $("tabUrl").classList.toggle("active", tab === "url");
@@ -601,7 +906,7 @@ async function submitSummarize() {
   const tab = $("sumSubmitBtn").dataset.tab || "url";
   const fb = $("sumFeedback"); fb.textContent = ""; fb.className = "feedback";
   const out = $("sumOutput");
-  const payload = { source_type: tab, market: $("sumMarket").value };
+  const payload = { source_type: tab, market: $("sumMarket").value, extract: true };
   if (tab === "url") {
     const u = $("sumUrl").value.trim();
     if (!u) { fb.textContent = "请填写 URL"; fb.className = "feedback error"; return; }
@@ -612,18 +917,56 @@ async function submitSummarize() {
     payload.text = t;
   }
   const btn = $("sumSubmitBtn");
-  btn.disabled = true; btn.textContent = "分析中…（最多 30s）";
+  btn.disabled = true; btn.textContent = "分析中…（首轮总结+二次结构化）";
   out.innerHTML = `<div class="empty-out">📡 正在抓取与分析，请稍候…</div>`;
+  $("sumSavePanel").hidden = true;
   try {
     const data = await apiPost("/api/v1/content/summarize", payload);
+    _lastSummarize = data;
     out.innerHTML = renderMarkdown(data.summary || "(空)") +
       `<hr/><div style="font-size:12px;color:var(--c-muted);">原文摘录：${escapeHtml(data.source_preview || "")}</div>`;
     fb.textContent = `已生成 · 市场 ${data.market}`; fb.className = "feedback success";
+    if (data.structured) {
+      $("sumSaveTitle").value = data.structured.title || "未命名素材";
+      $("sumSaveMarket").textContent = data.market;
+      $("sumSaveSource").textContent = data.source_url || "(粘贴正文)";
+      $("sumSaveStructured").textContent = JSON.stringify(data.structured, null, 2);
+      $("sumSaveFb").textContent = "";
+      $("sumSavePanel").hidden = false;
+    }
   } catch (e) {
     fb.textContent = "失败：" + e.message; fb.className = "feedback error";
     out.innerHTML = `<div class="empty-out" style="color:var(--c-error);">${escapeHtml(e.message)}</div>`;
   } finally {
     btn.disabled = false; btn.textContent = "生成文化洞察";
+  }
+}
+
+async function saveSummarizeToLibrary() {
+  if (!_lastSummarize) { toast("没有可保存的分析结果", "error"); return; }
+  const fb = $("sumSaveFb"); fb.textContent = "保存中…"; fb.className = "feedback";
+  let structured = {};
+  try { structured = JSON.parse($("sumSaveStructured").textContent); } catch { structured = _lastSummarize.structured || {}; }
+  const body = {
+    market: _lastSummarize.market,
+    title: $("sumSaveTitle").value.trim() || structured.title || "未命名素材",
+    source_type: _lastSummarize.source_type,
+    source_url: _lastSummarize.source_url || "",
+    summary_md: _lastSummarize.summary || "",
+    raw_excerpt: _lastSummarize.raw_excerpt || "",
+    structured,
+  };
+  const btn = $("sumSaveBtn"); btn.disabled = true;
+  try {
+    const rec = await apiPost("/api/v1/materials", body);
+    fb.textContent = `已入库 · ${rec.id}`; fb.className = "feedback success";
+    toast("素材已保存到我的库", "success");
+    $("sumSavePanel").hidden = true;
+    _materialCache.mine.unshift({ _kind: "mine", ...rec });
+  } catch (e) {
+    fb.textContent = "保存失败：" + e.message; fb.className = "feedback error";
+  } finally {
+    btn.disabled = false;
   }
 }
 

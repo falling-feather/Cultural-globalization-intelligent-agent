@@ -137,11 +137,18 @@
                 </div>
               </div>
             </div>
+            <div class="composer-quick" id="chatQuickRow">
+              <button class="btn btn-sm btn-ghost" id="chatInsertCultureBtn" type="button">💡 引用市场文化指南</button>
+              <button class="btn btn-sm btn-ghost" id="chatInsertTabooBtn" type="button">⚠ 列出禁忌词</button>
+              <button class="btn btn-sm btn-ghost" id="chatInsertToneBtn" type="button">🎙 套用推荐语气</button>
+              <button class="btn btn-sm btn-gold" id="chatRefMaterialBtn" type="button">📚 引用素材</button>
+            </div>
+            <div class="ref-chips" id="chatRefChips" hidden></div>
             <div class="composer">
               <textarea id="chatInput" placeholder="输入文化传播目标、受众、语气要求…  Enter 发送，Shift+Enter 换行"></textarea>
               <button class="btn btn-primary" id="chatSendBtn">发送</button>
             </div>
-            <div class="composer-hint" id="chatHint">支持基于历史的多轮对话，已自动遵循当前市场的语气偏好与禁忌词。</div>
+            <div class="composer-hint" id="chatHint">支持基于历史的多轮对话；上方按钮可一键把当前市场的文化指南/禁忌/语气追加到输入框。</div>
           </div>
         </section>
 
@@ -178,6 +185,14 @@
               <input id="createTags" type="text" value="18-35, mobile-first, urban" />
             </div>
 
+            <div class="culture-quick" id="createCultureQuick">
+              <div class="cq-head">
+                <span class="cq-title">📋 文化素材快捷调用</span>
+                <button class="btn btn-sm btn-gold" id="createApplyCultureBtn" type="button">一键套用当前市场风格</button>
+              </div>
+              <div class="cq-hint" id="createCultureHint">点击按钮：根据「目标市场」自动填入推荐语气、并把禁忌词加入受众备注，避免内容触雷。</div>
+            </div>
+
             <div style="display:flex; gap:10px; align-items:center; margin-top:6px;">
               <button class="btn btn-primary" id="createSubmitBtn">提交任务</button>
               <button class="btn btn-ghost" id="createResetBtn">重置</button>
@@ -207,10 +222,17 @@
           <div class="page-head">
             <div>
               <h1>文化素材库</h1>
-              <div class="page-sub">每个市场的语言、推荐语气、禁忌用语 — 也是智能体生成内容时的对齐基准。</div>
+              <div class="page-sub">系统市场基础规则 + 你自己洞察入库的素材，可在对话里被引用为上下文。</div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input id="matSearch" type="text" placeholder="🔍 搜索标题 / 标签" style="min-width:220px;" />
+              <select id="matMarketFilter" style="min-width:140px;">
+                <option value="">全部市场</option>
+              </select>
+              <button class="btn btn-sm" id="matRefreshBtn">刷新</button>
             </div>
           </div>
-          <div class="material-grid" id="materialGrid">
+          <div class="material-list" id="materialGrid">
             <div class="empty">加载中…</div>
           </div>
         </section>
@@ -241,11 +263,37 @@
                 <label for="sumMarket">目标市场</label>
                 <select id="sumMarket"><option value="AFRICA">AFRICA</option></select>
               </div>
+              <div class="culture-quick" id="sumCultureQuick">
+                <div class="cq-head">
+                  <span class="cq-title">📋 套用市场指南</span>
+                  <button class="btn btn-sm btn-gold" id="sumApplyCultureBtn" type="button">将文化规则注入分析提示</button>
+                </div>
+                <div class="cq-hint">点击后会在「正文」前追加当前市场的语气偏好和禁忌词，让分析更贴合本地受众。</div>
+              </div>
               <button class="btn btn-primary" id="sumSubmitBtn">生成文化洞察</button>
               <div class="feedback" id="sumFeedback" style="margin-top:8px;"></div>
             </div>
             <div class="summarize-output md" id="sumOutput">
               <div class="empty-out">📊 在左侧填写后，分析结果会以 Markdown 形式呈现在这里。</div>
+            </div>
+          </div>
+          <div id="sumSavePanel" class="card card-pad" hidden style="margin-top:14px;">
+            <div class="cq-head">
+              <span class="cq-title">💾 保存到素材库</span>
+              <span style="color:var(--c-muted); font-size:12px;">AI 二次提取的结构化字段，可编辑后入库。</span>
+            </div>
+            <div class="field"><label for="sumSaveTitle">标题</label><input id="sumSaveTitle" type="text" /></div>
+            <div class="field-row">
+              <div class="field"><label>市场</label><div id="sumSaveMarket" class="mono"></div></div>
+              <div class="field"><label>来源</label><div id="sumSaveSource" class="mono" style="word-break:break-all;"></div></div>
+            </div>
+            <div class="field"><label>结构化预览</label>
+              <pre id="sumSaveStructured" class="mono" style="max-height:240px; overflow:auto; padding:10px; background:#f7f7f8; border-radius:6px;"></pre>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <button class="btn btn-primary" id="sumSaveBtn" type="button">保存到我的素材库</button>
+              <button class="btn btn-ghost" id="sumSaveCancelBtn" type="button">取消</button>
+              <span id="sumSaveFb" class="feedback"></span>
             </div>
           </div>
         </section>

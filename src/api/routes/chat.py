@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from src.api.deps import CurrentUser, get_current_user
 from src.core.settings import settings
 from src.services.culture import culture_service
+from src.services.material_store import material_store
 from src.services.runtime_config import runtime_config
 
 router = APIRouter(tags=["chat"])
@@ -22,16 +23,52 @@ class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=2000)
     market: str = Field(default="AFRICA", max_length=16)
     history: list[ChatMessage] = Field(default_factory=list)
+    material_ids: list[str] = Field(default_factory=list, max_length=10)
 
 
 class ChatResponse(BaseModel):
     reply: str
     market: str
+    used_material_ids: list[str] = Field(default_factory=list)
+
+
+def _build_material_block(records) -> str:
+    if not records:
+        return ""
+    lines = [
+        "",
+        "=== Referenced cultural materials (use them as factual context) ===",
+    ]
+    for rec in records:
+        s = rec.structured or {}
+        lines.append(f"## [{rec.market}] {rec.title}")
+        if rec.source_url:
+            lines.append(f"Source: {rec.source_url}")
+        if s.get("tone_observed"):
+            lines.append("Observed tone: " + ", ".join(s["tone_observed"]))
+        if s.get("risks"):
+            lines.append("Risks: " + "; ".join(s["risks"]))
+        if s.get("taboo_hits"):
+            lines.append("Taboo hits: " + ", ".join(s["taboo_hits"]))
+        if s.get("tags"):
+            lines.append("Tags: " + ", ".join(s["tags"]))
+        if s.get("key_quotes"):
+            lines.append("Key quotes:")
+            for q in s["key_quotes"]:
+                lines.append(f"- {q}")
+        if rec.summary_md:
+            md = rec.summary_md.strip()
+            if len(md) > 1500:
+                md = md[:1500] + "…"
+            lines.append("Summary:")
+            lines.append(md)
+        lines.append("")
+    return "\n".join(lines)
 
 
 @router.post("/chat", response_model=ChatResponse)
 def chat(
-    _user: Annotated[CurrentUser, Depends(get_current_user)],
+    user: Annotated[CurrentUser, Depends(get_current_user)],
     request: ChatRequest,
 ) -> ChatResponse:
     if not runtime_config.deepseek_api_key:
@@ -51,6 +88,17 @@ def chat(
         "Help users plan video scripts, choose cultural strategies, and optimize content for overseas audiences. "
         "Be concise, practical, and culturally sensitive."
     )
+
+    used_ids: list[str] = []
+    if request.material_ids:
+        records = material_store.get_many_for_user(
+            material_ids=request.material_ids,
+            username=user.username,
+            is_admin=user.role == "admin",
+        )
+        if records:
+            system_prompt += _build_material_block(records)
+            used_ids = [r.id for r in records]
 
     messages = [{"role": "system", "content": system_prompt}]
     for msg in request.history[-20:]:
@@ -82,4 +130,4 @@ def chat(
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"DeepSeek request failed: {exc}") from exc
 
-    return ChatResponse(reply=reply, market=request.market)
+    return ChatResponse(reply=reply, market=request.market, used_material_ids=used_ids)

@@ -450,6 +450,27 @@ body[data-role="admin"] .nav-item.admin-only { display: flex; }
 }
 .composer .btn-primary { align-self: stretch; padding: 0 18px; }
 .composer-hint { font-size: 11px; color: var(--c-muted); padding: 2px 4px; }
+.composer-quick {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 4px 2px 6px;
+}
+
+/* ====== Culture quick-apply card ====== */
+.culture-quick {
+  margin: 14px 0 6px;
+  padding: 10px 12px;
+  background: var(--c-gold-soft);
+  border: 1px dashed var(--c-gold);
+  border-radius: var(--radius);
+}
+.culture-quick .cq-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-bottom: 4px;
+}
+.culture-quick .cq-title { font-size: 13px; font-weight: 600; color: var(--c-ink); }
+.culture-quick .cq-hint  { font-size: 12px; color: var(--c-ink-soft); line-height: 1.5; }
+.culture-quick.applied { background: #e6f4ec; border-color: var(--c-success); }
+.culture-quick.applied .cq-title { color: var(--c-success); }
 
 /* ====== Job list ====== */
 .job-grid { display: flex; flex-direction: column; gap: 10px; }
@@ -507,6 +528,53 @@ body[data-role="admin"] .nav-item.admin-only { display: flex; }
   text-transform: uppercase; font-weight: 700; margin-bottom: 4px;
 }
 .mat-section .tag.taboo { background: #fbe4e4; color: var(--c-error); }
+
+/* ====== Material list (V1.2) ====== */
+.material-list { display: flex; flex-direction: column; gap: 10px; }
+.mat-row {
+  background: var(--c-card);
+  border: 1px solid var(--c-line-soft);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px; align-items: center;
+  transition: transform .12s, box-shadow .12s;
+}
+.mat-row:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+.mat-row .mr-badge {
+  font-size: 11px; padding: 4px 10px; border-radius: 999px;
+  font-weight: 700; letter-spacing: .5px; white-space: nowrap;
+}
+.mat-row .mr-badge.system { background: var(--c-ink); color: var(--c-gold); }
+.mat-row .mr-badge.mine   { background: #e6f4ec; color: var(--c-success); }
+.mat-row .mr-title { font-size: 15px; font-weight: 600; color: var(--c-ink); margin-bottom: 4px; }
+.mat-row .mr-meta { font-size: 12px; color: var(--c-muted); display: flex; gap: 8px; flex-wrap: wrap; }
+.mat-row .mr-actions { display: flex; gap: 6px; }
+
+/* ====== Reference chips (chat composer) ====== */
+.ref-chips { display: flex; gap: 6px; flex-wrap: wrap; padding: 6px 0; }
+.ref-chips:empty { padding: 0; }
+.ref-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; background: #fff7e0;
+  border: 1px solid var(--c-gold); border-radius: 999px;
+  font-size: 12px; color: var(--c-ink);
+}
+.ref-chip .x { cursor: pointer; color: var(--c-muted); font-weight: 700; }
+.ref-chip .x:hover { color: var(--c-error); }
+
+/* ====== Picker dialog (素材引用) ====== */
+.picker-list { display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow: auto; }
+.picker-item {
+  display: flex; gap: 10px; align-items: center;
+  padding: 10px 12px; border: 1px solid var(--c-line-soft);
+  border-radius: 8px; cursor: pointer;
+}
+.picker-item:hover { background: #fafafa; }
+.picker-item.checked { border-color: var(--c-gold); background: #fffbe8; }
+.picker-item .pi-title { font-weight: 600; }
+.picker-item .pi-meta { font-size: 12px; color: var(--c-muted); }
 
 /* ====== Content summarize ====== */
 .summarize-grid {
