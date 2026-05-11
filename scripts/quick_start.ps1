@@ -22,21 +22,21 @@ if (-not (Test-Path ".env")) {
     Write-Host "[quick-start] please fill API keys in .env before using real providers."
 }
 
-# 检查 DeepSeek key 是否已配置（.env 占位符时提示去模型配置页设置）
+# Check whether DeepSeek key is configured (still placeholder -> remind user to set via UI)
 $envContent = Get-Content ".env" -Raw
 if ($envContent -match 'DEEPSEEK_API_KEY=YOUR_DEEPSEEK') {
     Write-Host ""
-    Write-Host "[quick-start] ⚠ DEEPSEEK_API_KEY 尚未填入 .env" -ForegroundColor Yellow
-    Write-Host "[quick-start]   请在服务启动后访问管理页面 → 模型配置，通过 UI 设置 API Key（无需重启）" -ForegroundColor Yellow
+    Write-Host "[quick-start] WARN: DEEPSEEK_API_KEY is not set in .env" -ForegroundColor Yellow
+    Write-Host "[quick-start]   After server starts, open Admin -> Model Config to set the API key via UI (no restart needed)." -ForegroundColor Yellow
     Write-Host ""
 }
 
-# 检查 SiliconFlow key 是否已配置
+# Check SiliconFlow key
 if ($envContent -match 'SILICONFLOW_API_KEY=YOUR_SILICONFLOW') {
     Write-Host ""
-    Write-Host "[quick-start] ⚠ SILICONFLOW_API_KEY 尚未填入 .env" -ForegroundColor Yellow
-    Write-Host "[quick-start]   视频生成功能将无法使用，请在 .env 中填入硅基流动 API Key" -ForegroundColor Yellow
-    Write-Host "[quick-start]   视频模型: Wan-AI/Wan2.2-T2V-A14B (text-to-video)" -ForegroundColor Yellow
+    Write-Host "[quick-start] WARN: SILICONFLOW_API_KEY is not set in .env" -ForegroundColor Yellow
+    Write-Host "[quick-start]   Video generation will be disabled. Set the SiliconFlow API key in .env to enable it." -ForegroundColor Yellow
+    Write-Host "[quick-start]   Video model: Wan-AI/Wan2.2-T2V-A14B (text-to-video)" -ForegroundColor Yellow
     Write-Host ""
 }
 

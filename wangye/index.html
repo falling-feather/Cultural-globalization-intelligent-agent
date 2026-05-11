@@ -117,9 +117,9 @@
           <div class="page-head">
             <div>
               <h1>智能对话</h1>
-              <div class="page-sub">由 DeepSeek 驱动的跨文化策略助手 — 当前市场 <strong id="dialogMarketName">AFRICA</strong></div>
             </div>
-            <div>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <span class="page-tag">市场 <strong id="dialogMarketName">AFRICA</strong></span>
               <button class="btn btn-sm" id="chatClearBtn">清空会话</button>
             </div>
           </div>
@@ -138,17 +138,16 @@
               </div>
             </div>
             <div class="composer-quick" id="chatQuickRow">
-              <button class="btn btn-sm btn-ghost" id="chatInsertCultureBtn" type="button">💡 引用市场文化指南</button>
-              <button class="btn btn-sm btn-ghost" id="chatInsertTabooBtn" type="button">⚠ 列出禁忌词</button>
-              <button class="btn btn-sm btn-ghost" id="chatInsertToneBtn" type="button">🎙 套用推荐语气</button>
-              <button class="btn btn-sm btn-gold" id="chatRefMaterialBtn" type="button">📚 引用素材</button>
+              <button class="btn btn-sm btn-ghost" id="chatInsertCultureBtn" type="button">引用市场指南</button>
+              <button class="btn btn-sm btn-ghost" id="chatInsertTabooBtn" type="button">列出禁忌词</button>
+              <button class="btn btn-sm btn-ghost" id="chatInsertToneBtn" type="button">套用推荐语气</button>
+              <button class="btn btn-sm btn-gold" id="chatRefMaterialBtn" type="button">引用素材</button>
             </div>
             <div class="ref-chips" id="chatRefChips" hidden></div>
             <div class="composer">
               <textarea id="chatInput" placeholder="输入文化传播目标、受众、语气要求…  Enter 发送，Shift+Enter 换行"></textarea>
               <button class="btn btn-primary" id="chatSendBtn">发送</button>
             </div>
-            <div class="composer-hint" id="chatHint">支持基于历史的多轮对话；上方按钮可一键把当前市场的文化指南/禁忌/语气追加到输入框。</div>
           </div>
         </section>
 
@@ -187,7 +186,7 @@
 
             <div class="culture-quick" id="createCultureQuick">
               <div class="cq-head">
-                <span class="cq-title">📋 文化素材快捷调用</span>
+                <span class="cq-title">文化素材快捷调用</span>
                 <button class="btn btn-sm btn-gold" id="createApplyCultureBtn" type="button">一键套用当前市场风格</button>
               </div>
               <div class="cq-hint" id="createCultureHint">点击按钮：根据「目标市场」自动填入推荐语气、并把禁忌词加入受众备注，避免内容触雷。</div>
@@ -225,7 +224,7 @@
               <div class="page-sub">系统市场基础规则 + 你自己洞察入库的素材，可在对话里被引用为上下文。</div>
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
-              <input id="matSearch" type="text" placeholder="🔍 搜索标题 / 标签" style="min-width:220px;" />
+              <input id="matSearch" type="text" placeholder="搜索标题 / 标签" style="min-width:220px;" />
               <select id="matMarketFilter" style="min-width:140px;">
                 <option value="">全部市场</option>
               </select>
@@ -265,7 +264,7 @@
               </div>
               <div class="culture-quick" id="sumCultureQuick">
                 <div class="cq-head">
-                  <span class="cq-title">📋 套用市场指南</span>
+                  <span class="cq-title">套用市场指南</span>
                   <button class="btn btn-sm btn-gold" id="sumApplyCultureBtn" type="button">将文化规则注入分析提示</button>
                 </div>
                 <div class="cq-hint">点击后会在「正文」前追加当前市场的语气偏好和禁忌词，让分析更贴合本地受众。</div>
@@ -274,12 +273,12 @@
               <div class="feedback" id="sumFeedback" style="margin-top:8px;"></div>
             </div>
             <div class="summarize-output md" id="sumOutput">
-              <div class="empty-out">📊 在左侧填写后，分析结果会以 Markdown 形式呈现在这里。</div>
+              <div class="empty-out">在左侧填写后，分析结果会以 Markdown 形式呈现在这里。</div>
             </div>
           </div>
           <div id="sumSavePanel" class="card card-pad" hidden style="margin-top:14px;">
             <div class="cq-head">
-              <span class="cq-title">💾 保存到素材库</span>
+              <span class="cq-title">保存到素材库</span>
               <span style="color:var(--c-muted); font-size:12px;">AI 二次提取的结构化字段，可编辑后入库。</span>
             </div>
             <div class="field"><label for="sumSaveTitle">标题</label><input id="sumSaveTitle" type="text" /></div>
@@ -366,7 +365,7 @@
           </div>
           <div class="mc-shell">
             <div class="mc-card">
-              <h3>🔗 DeepSeek 文本模型</h3>
+              <h3>DeepSeek 文本模型</h3>
               <p class="mc-help">默认使用 deepseek-v4-pro，可选 deepseek-v4-flash 等。保存后的配置会写入 <span class="mono">storage/model_config.json</span>，优先级高于 .env。</p>
               <div class="field">
                 <label for="mcApiKey">API Key <span id="mcKeyPill" class="mc-status-pill">未设置</span></label>
@@ -395,7 +394,7 @@
               <div class="feedback" id="mcFeedback" style="margin-top:8px;"></div>
             </div>
             <div class="mc-card">
-              <h3>🎬 视频模型（托管）</h3>
+              <h3>视频模型（托管）</h3>
               <p class="mc-help">视频生成仍由硬货服务提供，取自 .env，在此仅展示以供运维计算资源使用。</p>
               <div class="mc-kv">
                 <span class="k">Provider</span><span>SiliconFlow</span>
@@ -403,7 +402,7 @@
                 <span class="k">Task Type</span><span class="mono" id="mcWanTask">—</span>
                 <span class="k">Image Size</span><span class="mono" id="mcWanSize">—</span>
               </div>
-              <h3 style="margin-top:18px;">📡 连接测试返回</h3>
+              <h3 style="margin-top:18px;">连接测试返回</h3>
               <p class="mc-help">点击左侧「测试连接」后，调用该 Key 请求一次 DeepSeek，返回原始响应、模型名、token 消耗，以诊断 API 是否可用。</p>
               <div class="mc-test-out" id="mcTestOut">尚未测试</div>
             </div>

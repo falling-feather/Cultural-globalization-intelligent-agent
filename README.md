@@ -4,17 +4,20 @@ Agent Culture 是一个面向海外市场（主要目标：非洲地区）的 AI
 
 ## 核心功能
 
-- **智能对话**：与 AI 助手对话，讨论文化传播策略、内容创意、受众分析等
+- **智能对话**：与 AI 助手对话，讨论文化传播策略、内容创意、受众分析等；支持一键引用市场文化指南 / 禁忌 / 语气
+- **文化素材库（V1.2.0）**：系统市场规则 + 用户从「内容洞察」二次提取入库的结构化素材统一管理，用徒章区分；可搜索 / 市场过滤
+- **对话引用素材（V1.2.0）**：在智能对话中弹窗多选最多 10 条素材作为上下文，后端拼入 system prompt，使 AI 可引用你预先收集的市场事实
+- **内容洞察（三步走）**：URL 抓取 / 粘贴正文 → DeepSeek 生成文化适配 markdown 报告 → 二次抽取结构化字段（标题 / 语气 / 风险 / 禁忌命中 / 标签 / 关键引句）可一键入库
 - **视频脚本生成**：基于主题、目标市场和受众标签，自动生成文化适配的视频脚本
-- **AI 视频生成**：将脚本提交至硅基流动 Wan 模型，异步生成视频内容
+- **AI 视频生成**：将脚本提交至硟基流动 Wan 模型，异步生成视频内容
 - **文化规则引擎**：内置多市场文化规则库（语言偏好、推荐语气、禁忌用语），确保内容合规
 - **任务管理**：创建、查询、追踪视频生成任务的完整生命周期
 - **多市场支持**：预设 AFRICA、US、EU 等市场配置，可扩展
 - **登录与 JWT**：主界面需登录；管理员可查看操作审计日志、导出 CSV
 - **用户注册与角色管理**：支持自助注册（首位注册者自动晋升为管理员），管理员可在前端查看 / 删除用户
-- **多市场会话隔离**：聊天历史按市场（AFRICA / US / EU / DEFAULT）分别落盘 localStorage，切换市场即切换上下文
-- **内容总结**：输入公开网页 URL 或粘贴正文，按目标市场生成文化适配分析（DeepSeek）
+- **多市场会话隔离**：聊天历史按市场分别落盘 localStorage，切换市场即切换上下文
 - **任务实时统计**：右侧仪表盘按状态聚合 + 各市场分布条形图，运行中任务自动 6s 轮询刷新
+- **抹取链路加固**：HTTP/1.1 + httpx 内外双层重试 + 真实 Chrome UA 临思，遇 SSL/超时/连接错误返回中文友好提示并建议改用「粘贴正文」
 
 ## 创新点 / 软著要点
 
@@ -57,13 +60,22 @@ Agent Culture 是一个面向海外市场（主要目标：非洲地区）的 AI
 
 ## 快速启动
 
-### 方式一：PowerShell 一键启动
+### 方式一：Windows 一键脚本（推荐）
 
-```powershell
-.\scripts\quick_start.ps1
+```bat
+启动.bat                       :: 默认 8765 + 开启热重载 + 4 秒后自动开浏览器
+启动.bat --no-browser         :: 不自动开浏览器
+启动.bat --no-reload          :: 关闭热重载（生产调试）
+启动.bat --port 8766          :: 自定义端口（被占用会自动退退到下一个）
 ```
 
-首次启动会自动创建虚拟环境、安装依赖、从 `.env.example` 复制 `.env`。
+首次启动会自动创建 Python 3.11 虚拟环境、安装依赖、从 `.env.example` 复制 `.env`；如未填 DeepSeek/SiliconFlow Key 会提示访问「管理 → 模型配置」在 UI 里填入（无需重启）。
+
+### 方式二：PowerShell 脚本
+
+```powershell
+.\scripts\quick_start.ps1 -Port 8765
+```
 
 ### 方式二：手动启动
 
@@ -153,19 +165,57 @@ GET /api/v1/admin/users                    # 列出全部用户
 DELETE /api/v1/admin/users/{username}      # 删除用户（不能删自己）
 ```
 
-### 内容文化总结（需登录）
+### 内容文化总结 + 结构化抽取（需登录）
 
 ```
 POST /api/v1/content/summarize
-Body: { "source_type": "url"|"text", "url"?: "https://...", "text"?: "...", "market": "AFRICA" }
+Body: {
+  "source_type": "url"|"text",
+  "url"?: "https://...",
+  "text"?: "...",
+  "market": "AFRICA",
+  "extract": true                   // 可选，为 true 时后端会二次调 DeepSeek json_object 抽结构化字段
+}
+Response: {
+  "summary": "...markdown...",
+  "market": "AFRICA",
+  "raw_excerpt": "...",             // 原文截取，素材入库用
+  "source_type": "text",
+  "source_url": "",
+  "structured": {                    // extract:true 时返回
+    "title": "...",
+    "tone_observed": [...],
+    "risks": [...],
+    "taboo_hits": [...],
+    "tags": [...],
+    "key_quotes": [...]
+  }
+}
+```
+
+抹取失败会由后端返回中文友好提示并建议改用「粘贴正文」（首页已集成在上面的 Tab 切换上）。
+
+### 文化素材库（需登录，V1.2.0 新增）
+
+```
+GET    /api/v1/materials?market=AFRICA&limit=200       # 列出本人素材，admin 跨用户可见
+POST   /api/v1/materials                                # 入库（限流 30/min）
+Body: { market, title, source_type, source_url?, summary_md, raw_excerpt?, structured? }
+GET    /api/v1/materials/{id}                           # 详情
+DELETE /api/v1/materials/{id}                           # 删除（仅拥有人 / admin）
 ```
 
 ### 对话
 
 ```
 POST /api/v1/chat
-Body: { "message": "你好", "market": "AFRICA", "history": [] }
-Response: { "reply": "...", "market": "AFRICA" }
+Body: {
+  "message": "你好",
+  "market": "AFRICA",
+  "history": [],
+  "material_ids": ["<id1>","<id2>"]   // 可选，V1.2.0 新增，最多 10 条，将被拼入 system prompt
+}
+Response: { "reply": "...", "market": "AFRICA", "used_material_ids": [...] }
 ```
 
 ### 任务管理
@@ -228,6 +278,9 @@ agent-culture/
 │       ├── pipeline.py       # 任务编排（脚本生成 + 视频提交）
 │       ├── providers.py      # 外部 API 调用（DeepSeek + SiliconFlow）
 │       ├── culture.py        # 文化规则加载
+│       ├── material_store.py # 用户素材库（SQLite，V1.2.0）
+│       ├── url_safety.py     # 抓取前 SSRF 防护
+│       ├── auth_store.py     # 账号 / 审计 / 限流状态
 │       └── task_store.py     # 任务存储（SQLite 持久化）
 ├── wangye/                   # 前端主界面
 │   ├── index.html
@@ -240,10 +293,10 @@ agent-culture/
 
 ## 使用流程
 
-1. 启动服务后，访问 `http://localhost:8000/`
-2. 在「智能对话」中与 AI 讨论内容策略
-3. 在「创建任务」中填写主题、市场、语气等参数并提交
-4. 在「任务管理」中查看任务进度，点击任务卡片查看详情
-5. 任务完成后可查看生成的脚本和视频链接
-6. 在「文化素材」中查阅各市场的文化规则数据
+1. 启动服务后，访问 `http://localhost:8765/`（启动.bat 默认会自动开浏览器）
+2. 在「智能对话」中与 AI 讨论内容策略；可点「引用素材」弹窗勾选你入库的素材作为上下文
+3. 在「内容洞察」里抓取 URL 或粘贴正文生成文化适配报告，点「保存到我的素材库」入库
+4. 在「文化素材」页查看系统规则 + 你的素材（带「系统」/「我的」徽章），可搜索 / 过滤
+5. 在「创建任务」中填写主题、市场、语气等参数提交视频生成任务
+6. 在「任务管理」中追踪任务进度，点任务卡片查看脚本与视频链接
 

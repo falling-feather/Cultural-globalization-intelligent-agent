@@ -405,7 +405,7 @@ function _renderRefChips() {
   if (!_chatRefMaterials.length) { wrap.hidden = true; wrap.innerHTML = ""; return; }
   wrap.hidden = false;
   wrap.innerHTML = _chatRefMaterials.map((m) =>
-    `<span class="ref-chip" data-rid="${escapeHtml(m.id)}">📚 ${escapeHtml(m.title)} · ${escapeHtml(m.market)}<span class="x" data-x="${escapeHtml(m.id)}">✕</span></span>`
+    `<span class="ref-chip" data-rid="${escapeHtml(m.id)}">${escapeHtml(m.title)} · ${escapeHtml(m.market)}<span class="x" data-x="${escapeHtml(m.id)}">✕</span></span>`
   ).join("");
   wrap.querySelectorAll("[data-x]").forEach((x) => x.addEventListener("click", () => {
     _chatRefMaterials = _chatRefMaterials.filter((m) => m.id !== x.dataset.x);
@@ -918,7 +918,7 @@ async function submitSummarize() {
   }
   const btn = $("sumSubmitBtn");
   btn.disabled = true; btn.textContent = "分析中…（首轮总结+二次结构化）";
-  out.innerHTML = `<div class="empty-out">📡 正在抓取与分析，请稍候…</div>`;
+  out.innerHTML = `<div class="empty-out">正在抓取与分析，请稍候…</div>`;
   $("sumSavePanel").hidden = true;
   try {
     const data = await apiPost("/api/v1/content/summarize", payload);

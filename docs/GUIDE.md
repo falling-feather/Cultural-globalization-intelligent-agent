@@ -93,11 +93,22 @@ ADMIN_PASSWORD=你的强密码
 uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-或使用一键启动脚本（Windows）：
+或使用一键启动脚本：
+
+```bat
+:: Windows 推荐：双击或命令行运行
+启动.bat                       :: 默认 8765 + 热重载 + 自动开浏览器
+启动.bat --no-browser         :: 不自动开浏览器
+启动.bat --no-reload          :: 关闭热重载
+启动.bat --port 8766          :: 自定义端口（被占用会自动退到下一个）
+```
 
 ```powershell
-.\scripts\quick_start.ps1
+# PowerShell 入口（与 .bat 等价，可传 -Port / -NoBrowser / -NoReload）
+.\scripts\quick_start.ps1 -Port 8765
 ```
+
+> 首次启动会自动创建 Python 3.11 venv、安装依赖、复制 `.env`；如未填 API Key 会在控制台提示，可登录后到「管理 → 模型配置」在 UI 内填入（无需重启）。
 
 启动后可访问：
 
@@ -116,6 +127,7 @@ uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 - 后端代码在 `src/` 目录中，使用 `--reload` 参数启动时会自动重载
 - 任务数据存储在 `storage/task_store.db`（SQLite），删除该文件可清空所有任务
 - 任务产物 JSON 存储在 `storage/outputs/`
+- 用户素材库（V1.2.0）存储在 `storage/auth.db` 的 `materials` 表中，与账号同库；通过 `GET/POST/DELETE /api/v1/materials` 维护，前端「文化素材」「内容洞察」「智能对话」三个视图共用
 
 ---
 
