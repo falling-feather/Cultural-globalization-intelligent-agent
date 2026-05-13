@@ -159,7 +159,7 @@ let pollTimer = null;
 let pollingActive = false;
 
 // ===== View routing =====
-const VIEWS = ["dialog", "create", "tasks", "material", "summarize", "admin", "users", "modelConfig"];
+const VIEWS = ["dialog", "create", "tasks", "material", "summarize", "brandVoice", "admin", "users", "feedback", "modelConfig"];
 function switchView(key) {
   if (!VIEWS.includes(key)) return;
   $$(".view").forEach((v) => v.classList.remove("active"));
@@ -172,6 +172,8 @@ function switchView(key) {
   if (key === "admin") loadAuditLogs();
   if (key === "users") loadUsers();
   if (key === "modelConfig") loadModelConfig();
+  if (key === "brandVoice" && window.BV && window.BV.load) window.BV.load();
+  if (key === "feedback" && window.FB && window.FB.load) window.FB.load();
 }
 
 // ===== Boot =====
@@ -204,6 +206,7 @@ async function boot() {
 
 function applyMe() {
   if (!me) return;
+  window.me = me;
   $("userName").textContent = me.username;
   $("userAvatar").textContent = (me.username || "?")[0].toUpperCase();
   const role = me.role || "user";
@@ -247,6 +250,7 @@ async function loadMarkets() {
 
 function setMarket(m) {
   currentMarket = m;
+  window.currentMarket = m;
   for (const id of ["marketSelect", "createMarket", "sumMarket"]) {
     const el = $(id);
     if (el && [...el.options].some((o) => o.value === m)) el.value = m;
@@ -382,6 +386,7 @@ async function sendChat() {
       market: currentMarket,
       history: chatHistory.slice(0, -1).slice(-20),
       material_ids: _chatRefMaterials.map((x) => x.id),
+      brand_voice_id: ($("chatBrandVoice") && $("chatBrandVoice").value) || null,
     });
     chatHistory.push({ role: "assistant", content: data.reply });
     saveChatHistory();
@@ -579,6 +584,7 @@ async function submitCreate() {
     market: $("createMarket").value,
     tone: $("createTone").value.trim() || "neutral",
     audience_tags: $("createTags").value.split(",").map((s) => s.trim()).filter(Boolean),
+    brand_voice_id: ($("createBrandVoice") && $("createBrandVoice").value) || null,
   };
   const btn = $("createSubmitBtn");
   btn.disabled = true; btn.textContent = "提交中…";
@@ -923,6 +929,7 @@ async function submitSummarize() {
   try {
     const data = await apiPost("/api/v1/content/summarize", payload);
     _lastSummarize = data;
+    window._lastSummarize = data;
     out.innerHTML = renderMarkdown(data.summary || "(空)") +
       `<hr/><div style="font-size:12px;color:var(--c-muted);">原文摘录：${escapeHtml(data.source_preview || "")}</div>`;
     fb.textContent = `已生成 · 市场 ${data.market}`; fb.className = "feedback success";

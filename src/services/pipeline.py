@@ -4,6 +4,7 @@ from uuid import uuid4
 
 from src.core.settings import settings
 from src.models.schemas import CreateJobRequest, JobStatus
+from src.services.brand_voice_store import brand_voice_store, render_brand_voice_block
 from src.services.culture import culture_service
 from src.services.providers import (
     ProviderError,
@@ -35,6 +36,18 @@ class PipelineService:
             market_rules = culture_service.get_market_rules(record.request.market)
             provider_notes: list[str] = []
 
+            brand_voice_block = ""
+            brand_voice_name: str | None = None
+            bv_id = getattr(record.request, "brand_voice_id", None)
+            if bv_id:
+                bv = brand_voice_store.get_for_user(
+                    voice_id=bv_id, username="", is_admin=True
+                )
+                if bv is not None:
+                    brand_voice_block = render_brand_voice_block(bv)
+                    brand_voice_name = bv.name
+                    provider_notes.append(f"brand_voice:{bv.name}")
+
             if settings.use_real_apis:
                 try:
                     script = generate_script_with_deepseek(
@@ -50,6 +63,9 @@ class PipelineService:
             else:
                 script = self._build_script(record.request, market_rules)
                 provider_notes.append("deepseek:mock")
+
+            if brand_voice_block:
+                script = script + "\n\n" + brand_voice_block
 
             video_url = ""
             remote_task_id: str | None = None
@@ -88,6 +104,7 @@ class PipelineService:
                 "provider_notes": provider_notes,
                 "remote_task_id": remote_task_id,
                 "culture_rules_used": market_rules,
+                "brand_voice": brand_voice_name,
                 "script": script,
                 "voice_file": f"{job_id}.mp3",
                 "video_file": f"{job_id}.mp4",

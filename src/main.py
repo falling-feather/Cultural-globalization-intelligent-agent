@@ -9,9 +9,11 @@ from slowapi.errors import RateLimitExceeded
 
 from src.api.deps import client_ip_from_request
 from src.api.routes.auth import router as auth_router
+from src.api.routes.brand_voice import router as brand_voice_router
 from src.api.routes.chat import router as chat_router
 from src.api.routes.content import router as content_router
 from src.api.routes.culture import router as culture_router
+from src.api.routes.feedback import router as feedback_router
 from src.api.routes.jobs import router as jobs_router
 from src.core.limiter import limiter
 from src.core.security import decode_token
@@ -69,6 +71,8 @@ app.include_router(jobs_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(culture_router, prefix="/api/v1")
 app.include_router(content_router, prefix="/api/v1")
+app.include_router(feedback_router, prefix="/api/v1")
+app.include_router(brand_voice_router, prefix="/api/v1")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 WANGYE_DIR = PROJECT_ROOT / "wangye"

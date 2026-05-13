@@ -82,6 +82,12 @@
           </span>
           内容洞察
         </button>
+        <button class="nav-item" data-view="brandVoice">
+          <span class="nav-ico">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M2 4h12v2H2zm0 3h9v2H2zm0 3h12v2H2zm0 3h7v2H2z"/></svg>
+          </span>
+          品牌音调
+        </button>
 
         <div class="side-title" style="margin-top:18px;">管理</div>
         <button class="nav-item admin-only" data-view="admin">
@@ -95,6 +101,12 @@
             <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M5 7a3 3 0 1 1 6 0 3 3 0 0 1-6 0zm-3 7c0-2.5 2.7-4.5 6-4.5s6 2 6 4.5v1H2v-1z"/></svg>
           </span>
           用户管理
+        </button>
+        <button class="nav-item admin-only" data-view="feedback">
+          <span class="nav-ico">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M3 2h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H8.5L5 15v-3H3a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm3 4h4v1H6zm0 2h6v1H6z"/></svg>
+          </span>
+          反馈洞察
         </button>
         <button class="nav-item admin-only" data-view="modelConfig">
           <span class="nav-ico">
@@ -142,6 +154,11 @@
               <button class="btn btn-sm btn-ghost" id="chatInsertTabooBtn" type="button">列出禁忌词</button>
               <button class="btn btn-sm btn-ghost" id="chatInsertToneBtn" type="button">套用推荐语气</button>
               <button class="btn btn-sm btn-gold" id="chatRefMaterialBtn" type="button">引用素材</button>
+              <span style="flex:1;"></span>
+              <label style="display:flex; gap:6px; align-items:center; font-size:12px; color:var(--c-muted);">
+                品牌音调
+                <select id="chatBrandVoice" style="min-width:140px;"><option value="">（不使用）</option></select>
+              </label>
             </div>
             <div class="ref-chips" id="chatRefChips" hidden></div>
             <div class="composer">
@@ -184,6 +201,11 @@
               <input id="createTags" type="text" value="18-35, mobile-first, urban" />
             </div>
 
+            <div class="field">
+              <label for="createBrandVoice">品牌音调（可选）</label>
+              <select id="createBrandVoice"><option value="">（不使用）</option></select>
+            </div>
+
             <div class="culture-quick" id="createCultureQuick">
               <div class="cq-head">
                 <span class="cq-title">文化素材快捷调用</span>
@@ -209,6 +231,8 @@
             </div>
             <div style="display:flex; gap:8px;">
               <button class="btn btn-sm" id="refreshJobsBtn">手动刷新</button>
+              <button class="btn btn-sm btn-gold" id="jobsExportCsvBtn">导出 CSV</button>
+              <button class="btn btn-sm" id="jobsExportJsonBtn">导出 JSON</button>
             </div>
           </div>
           <div class="job-grid" id="jobsList">
@@ -229,6 +253,8 @@
                 <option value="">全部市场</option>
               </select>
               <button class="btn btn-sm" id="matRefreshBtn">刷新</button>
+              <button class="btn btn-sm btn-gold" id="matExportCsvBtn">导出 CSV</button>
+              <button class="btn btn-sm" id="matExportJsonBtn">导出 JSON</button>
             </div>
           </div>
           <div class="material-list" id="materialGrid">
@@ -294,6 +320,64 @@
               <button class="btn btn-ghost" id="sumSaveCancelBtn" type="button">取消</button>
               <span id="sumSaveFb" class="feedback"></span>
             </div>
+          </div>
+
+          <div class="card card-pad" style="margin-top:14px;">
+            <div class="cq-head">
+              <span class="cq-title">文化适配评分（V2.0 独创）</span>
+              <button class="btn btn-sm btn-gold" id="scoreRunBtn" type="button">对当前正文运行评分</button>
+            </div>
+            <div class="cq-hint">DeepSeek 按目标市场打分：语气贴合 / 禁忌触发 / 本地化用语 / 可信度 / 受众共鸣，并生成改写建议。</div>
+            <div id="scorePanel" class="score-panel" hidden></div>
+          </div>
+        </section>
+
+        <!-- ===== Brand Voice View ===== -->
+        <section class="view" id="viewBrandVoice">
+          <div class="page-head">
+            <div>
+              <h1>品牌音调库</h1>
+              <div class="page-sub">把品牌的常用关键词、禁用词、风格说明保存为「规则包」，对话和任务可一键挂载。</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-sm btn-primary" id="bvNewBtn">新建规则包</button>
+              <button class="btn btn-sm" id="bvRefreshBtn">刷新</button>
+            </div>
+          </div>
+          <div class="bv-grid" id="bvGrid">
+            <div class="empty">加载中…</div>
+          </div>
+        </section>
+
+        <!-- ===== Admin: Feedback Insight ===== -->
+        <section class="view" id="viewFeedback">
+          <div class="page-head">
+            <div>
+              <h1>反馈洞察（V2.0）</h1>
+              <div class="page-sub">用户对 AI 回复的「有用 / 无用」打分汇总，按市场维度查看满意度。</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-sm" id="fbRefreshBtn">刷新</button>
+            </div>
+          </div>
+          <div class="card card-pad" id="fbStatsCard">
+            <div class="empty">加载中…</div>
+          </div>
+          <div class="data-card" style="margin-top:14px;">
+            <div style="padding:10px 14px; font-weight:600;">最近 50 条反馈</div>
+            <table class="data" id="fbTable">
+              <thead>
+                <tr>
+                  <th>时间 (UTC)</th>
+                  <th>用户</th>
+                  <th>市场</th>
+                  <th>来源</th>
+                  <th>评价</th>
+                  <th>批注</th>
+                </tr>
+              </thead>
+              <tbody><tr><td colspan="6" class="empty">加载中…</td></tr></tbody>
+            </table>
           </div>
         </section>
 
@@ -466,5 +550,6 @@
   <div class="toast-wrap" id="toastWrap"></div>
 
   <script src="script.js"></script>
+  <script src="script_v2.js"></script>
 </body>
 </html>

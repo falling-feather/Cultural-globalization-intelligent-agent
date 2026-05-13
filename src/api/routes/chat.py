@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from src.api.deps import CurrentUser, get_current_user
 from src.core.settings import settings
+from src.services.brand_voice_store import brand_voice_store, render_brand_voice_block
 from src.services.culture import culture_service
 from src.services.material_store import material_store
 from src.services.runtime_config import runtime_config
@@ -24,12 +25,14 @@ class ChatRequest(BaseModel):
     market: str = Field(default="AFRICA", max_length=16)
     history: list[ChatMessage] = Field(default_factory=list)
     material_ids: list[str] = Field(default_factory=list, max_length=10)
+    brand_voice_id: str | None = Field(default=None, max_length=32)
 
 
 class ChatResponse(BaseModel):
     reply: str
     market: str
     used_material_ids: list[str] = Field(default_factory=list)
+    used_brand_voice: str | None = None
 
 
 def _build_material_block(records) -> str:
@@ -100,6 +103,17 @@ def chat(
             system_prompt += _build_material_block(records)
             used_ids = [r.id for r in records]
 
+    used_brand: str | None = None
+    if request.brand_voice_id:
+        bv = brand_voice_store.get_for_user(
+            voice_id=request.brand_voice_id,
+            username=user.username,
+            is_admin=user.role == "admin",
+        )
+        if bv:
+            system_prompt += render_brand_voice_block(bv)
+            used_brand = bv.name
+
     messages = [{"role": "system", "content": system_prompt}]
     for msg in request.history[-20:]:
         messages.append({"role": msg.role, "content": msg.content})
@@ -130,4 +144,9 @@ def chat(
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"DeepSeek request failed: {exc}") from exc
 
-    return ChatResponse(reply=reply, market=request.market, used_material_ids=used_ids)
+    return ChatResponse(
+        reply=reply,
+        market=request.market,
+        used_material_ids=used_ids,
+        used_brand_voice=used_brand,
+    )

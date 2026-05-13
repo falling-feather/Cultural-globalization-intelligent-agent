@@ -1,0 +1,30 @@
+{
+  "language": "id",
+  "tone_preferences": ["family-oriented", "respectful", "warm", "modest"],
+  "taboo_terms": [
+    "alcohol-centric celebration",
+    "pork product as default",
+    "secular religion mockery",
+    "casual romance imagery"
+  ],
+  "cultural_keywords": [
+    "gotong royong",
+    "Lebaran",
+    "halal",
+    "nasi padang",
+    "Bahasa Indonesia",
+    "kampung halaman"
+  ],
+  "festival_references": [
+    "Idul Fitri",
+    "Hari Raya",
+    "Imlek",
+    "Songkran",
+    "Vesak"
+  ],
+  "audience_notes": [
+    "受众跨马来西亚 / 印度尼西亚 / 菲律宾 / 越南 / 泰国，宗教多元（伊斯兰、佛教、天主教并存）",
+    "短视频时长建议 30-60 秒，竖屏 9:16，开头 3 秒内点出价值",
+    "强调家庭、社区与传统节庆，避免单独突出个体享乐"
+  ]
+}

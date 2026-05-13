@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from fastapi.responses import Response
 
 from src.api.deps import CurrentUser, get_current_user
 from src.models.schemas import CreateJobRequest, JobRecord
@@ -26,6 +27,50 @@ def list_jobs(
     jobs = task_store.list_all(limit=limit, offset=offset)
     total = task_store.count()
     return {"jobs": [j.model_dump(mode="json") for j in jobs], "total": total}
+
+
+@router.get("/jobs/export")
+def export_jobs(
+    _user: Annotated[CurrentUser, Depends(get_current_user)],
+    format: str = Query(default="csv", pattern="^(csv|json)$"),
+) -> Response:
+    jobs = task_store.list_all(limit=5000, offset=0)
+    if format == "json":
+        body = json.dumps([j.model_dump(mode="json") for j in jobs], ensure_ascii=False, indent=2)
+        return Response(
+            content=body,
+            media_type="application/json",
+            headers={"Content-Disposition": 'attachment; filename="jobs.json"'},
+        )
+    import csv
+    import io
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(
+        ["id", "status", "topic", "market", "tone", "audience_tags", "brand_voice_id", "created_at", "updated_at", "error"]
+    )
+    for j in jobs:
+        req = j.request
+        writer.writerow(
+            [
+                j.id,
+                j.status.value,
+                req.topic,
+                req.market,
+                req.tone,
+                "|".join(req.audience_tags or []),
+                getattr(req, "brand_voice_id", None) or "",
+                j.created_at.isoformat(),
+                j.updated_at.isoformat(),
+                j.error or "",
+            ]
+        )
+    return Response(
+        content="\ufeff" + buf.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="jobs.csv"'},
+    )
 
 
 @router.post("/jobs")

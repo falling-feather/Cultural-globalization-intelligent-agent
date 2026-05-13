@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from threading import Lock
@@ -30,6 +30,7 @@ class MaterialRecord:
     raw_excerpt: str
     structured: dict
     created_at: str
+    user_tags: list[str] = field(default_factory=list)
 
 
 class MaterialStore:
@@ -68,6 +69,12 @@ class MaterialStore:
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS ix_materials_market ON materials(market)"
             )
+            # V2.0: 新增 user_tags 字段（旧库 ALTER TABLE 兼容）
+            cols = {row[1] for row in conn.execute("PRAGMA table_info(materials)").fetchall()}
+            if "user_tags_json" not in cols:
+                conn.execute(
+                    "ALTER TABLE materials ADD COLUMN user_tags_json TEXT NOT NULL DEFAULT '[]'"
+                )
             conn.commit()
 
     def _row_to_record(self, row: sqlite3.Row) -> MaterialRecord:
@@ -75,6 +82,13 @@ class MaterialStore:
             structured = json.loads(row["structured_json"] or "{}")
         except Exception:
             structured = {}
+        try:
+            user_tags_raw = row["user_tags_json"] if "user_tags_json" in row.keys() else "[]"
+            user_tags = json.loads(user_tags_raw or "[]")
+            if not isinstance(user_tags, list):
+                user_tags = []
+        except Exception:
+            user_tags = []
         return MaterialRecord(
             id=row["id"],
             owner_username=row["owner_username"],
@@ -86,6 +100,7 @@ class MaterialStore:
             raw_excerpt=row["raw_excerpt"] or "",
             structured=structured,
             created_at=row["created_at"],
+            user_tags=[str(t)[:40] for t in user_tags][:20],
         )
 
     def create(
@@ -222,6 +237,50 @@ class MaterialStore:
                 )
             conn.commit()
             return cur.rowcount > 0
+
+    def update_tags_for_user(
+        self,
+        *,
+        material_id: str,
+        username: str,
+        tags: list[str],
+        is_admin: bool = False,
+    ) -> MaterialRecord | None:
+        rec = self.get_for_user(
+            material_id=material_id, username=username, is_admin=is_admin
+        )
+        if rec is None:
+            return None
+        clean: list[str] = []
+        seen: set[str] = set()
+        for t in tags or []:
+            s = str(t).strip()[:40]
+            if s and s not in seen:
+                clean.append(s)
+                seen.add(s)
+            if len(clean) >= 20:
+                break
+        with self._lock, self._connect() as conn:
+            conn.execute(
+                "UPDATE materials SET user_tags_json = ? WHERE id = ?",
+                (json.dumps(clean, ensure_ascii=False), material_id),
+            )
+            conn.commit()
+        rec.user_tags = clean
+        return rec
+
+    def all_for_export(
+        self, *, username: str, is_admin: bool = False
+    ) -> list[MaterialRecord]:
+        sql = "SELECT * FROM materials"
+        params: list[Any] = []
+        if not is_admin:
+            sql += " WHERE owner_username = ?"
+            params.append(username)
+        sql += " ORDER BY created_at DESC LIMIT 5000"
+        with self._lock, self._connect() as conn:
+            rows = conn.execute(sql, tuple(params)).fetchall()
+        return [self._row_to_record(r) for r in rows]
 
 
 material_store = MaterialStore()

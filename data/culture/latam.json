@@ -1,0 +1,31 @@
+{
+  "language": "es",
+  "tone_preferences": ["passionate", "warm", "inclusive", "energetic"],
+  "taboo_terms": [
+    "stereotyped accent humor",
+    "narco glamorization",
+    "regional generalization",
+    "political polarization joke"
+  ],
+  "cultural_keywords": [
+    "familia",
+    "fiesta",
+    "fútbol",
+    "telenovela",
+    "barrio",
+    "comunidad",
+    "música latina"
+  ],
+  "festival_references": [
+    "Día de los Muertos",
+    "Carnaval",
+    "Navidad latina",
+    "Copa América",
+    "Quinceañera"
+  ],
+  "audience_notes": [
+    "覆盖墨西哥 / 哥伦比亚 / 阿根廷 / 巴西（葡语为主）等市场，西班牙语为主、葡语次之",
+    "讲故事节奏偏慢，重视情感铺垫与家庭价值观",
+    "音乐与节庆元素是高效共鸣点，避免国家间刻板比较"
+  ]
+}

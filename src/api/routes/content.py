@@ -1,8 +1,11 @@
 from typing import Annotated, Literal
 
+import json
+
 import httpx
 import trafilatura
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from starlette.requests import Request
 
@@ -16,6 +19,7 @@ from src.services.providers import (
     extract_structured_material,
     summarize_content_for_market,
 )
+from src.services.scoring import score_with_deepseek
 from src.services.url_safety import UnsafeUrlError, assert_url_safe_for_fetch
 
 router = APIRouter(tags=["content"])
@@ -209,6 +213,7 @@ def _record_to_dict(rec) -> dict:
         "raw_excerpt": rec.raw_excerpt,
         "structured": rec.structured,
         "created_at": rec.created_at,
+        "user_tags": list(getattr(rec, "user_tags", []) or []),
     }
 
 
@@ -289,3 +294,133 @@ def delete_material(
     if not ok:
         raise HTTPException(status_code=404, detail="material not found or not owned")
     return {"status": "ok", "deleted": material_id}
+
+
+# ===== V2.0 新增：素材自定义标签 =====
+
+
+class TagsUpdate(BaseModel):
+    tags: list[str] = Field(default_factory=list, max_length=20)
+
+
+@router.put("/materials/{material_id}/tags")
+def update_material_tags(
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+    material_id: str,
+    body: TagsUpdate,
+) -> dict:
+    rec = material_store.update_tags_for_user(
+        material_id=material_id,
+        username=user.username,
+        tags=body.tags,
+        is_admin=user.role == "admin",
+    )
+    if rec is None:
+        raise HTTPException(status_code=404, detail="material not found or not owned")
+    return _record_to_dict(rec)
+
+
+# ===== V2.0 新增：素材库批量导出 =====
+
+
+def _materials_to_csv(records: list) -> str:
+    import csv
+    import io
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(
+        [
+            "id",
+            "owner",
+            "market",
+            "title",
+            "source_type",
+            "source_url",
+            "user_tags",
+            "ai_tags",
+            "created_at",
+        ]
+    )
+    for rec in records:
+        s = rec.structured or {}
+        ai_tags = s.get("tags") if isinstance(s.get("tags"), list) else []
+        writer.writerow(
+            [
+                rec.id,
+                rec.owner_username,
+                rec.market,
+                rec.title,
+                rec.source_type,
+                rec.source_url or "",
+                "|".join(getattr(rec, "user_tags", []) or []),
+                "|".join(ai_tags or []),
+                rec.created_at,
+            ]
+        )
+    return buf.getvalue()
+
+
+@router.get("/materials-export")
+def export_materials(
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+    format: Literal["csv", "json"] = "csv",
+) -> Response:
+    records = material_store.all_for_export(
+        username=user.username, is_admin=user.role == "admin"
+    )
+    if format == "json":
+        body = json.dumps(
+            [_record_to_dict(r) for r in records],
+            ensure_ascii=False,
+            indent=2,
+        )
+        return Response(
+            content=body,
+            media_type="application/json",
+            headers={"Content-Disposition": 'attachment; filename="materials.json"'},
+        )
+    csv_text = _materials_to_csv(records)
+    # UTF-8 BOM 让 Excel 正确识别中文
+    return Response(
+        content="\ufeff" + csv_text,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="materials.csv"'},
+    )
+
+
+# ===== V2.0 新增：文化适配评分 =====
+
+
+class ScoreRequest(BaseModel):
+    text: str = Field(..., min_length=10, max_length=5000)
+    market: str = Field(default="AFRICA", max_length=16)
+
+
+class ScoreResponse(BaseModel):
+    market: str
+    scores: dict[str, float]
+    comments: dict[str, str]
+    overall: float
+    advice: list[str]
+    engine: str
+
+
+@router.post("/content/score", response_model=ScoreResponse)
+@limiter.limit("20/minute")
+def score_content(
+    request: Request,
+    body: ScoreRequest,
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> ScoreResponse:
+    _ = (request, user)
+    rules = culture_service.get_market_rules(body.market)
+    result = score_with_deepseek(body.text, body.market, rules)
+    return ScoreResponse(
+        market=body.market,
+        scores=result["scores"],
+        comments=result["comments"],
+        overall=result["overall"],
+        advice=result["advice"],
+        engine=result["engine"],
+    )
